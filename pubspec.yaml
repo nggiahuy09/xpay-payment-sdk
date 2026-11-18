@@ -1,6 +1,6 @@
 name: xpay_payment_sdk
 description: "XPay payment SDK: collect a payment with an XPay card (NFC tap, QR scan or manual entry) from a Flutter host app."
-version: 3.11.18
+version: 3.1118.2
 publish_to: 'none'
 
 environment:

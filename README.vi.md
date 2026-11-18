@@ -87,7 +87,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.11.18
+      ref: v3.1118.2
 ```
 
 Nâng cấp: đổi `ref` sang tag mới rồi chạy `flutter pub get`. Đọc [CHANGELOG.md](CHANGELOG.md) trước, vì số phiên bản không theo Semantic Versioning nên breaking change chỉ được ghi ở đó.
@@ -467,7 +467,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `card_nfc`     | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                                                                              |
 | `card_nfc`     | `advance_counter`                                        | `error` | Không cập nhật được bộ đếm trên chip                                                                                                                                                                                                                          | `chip_uid`, `counter_sector`, `counter_block`                                                      |
 
-Danh sách này phản ánh phiên bản `3.11.18` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
+Danh sách này phản ánh phiên bản `3.1118.2` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
 
@@ -494,7 +494,7 @@ Hành vi chung:
 5. HTTP 409 ở bước authorize: kết quả là `duplicate`.
 6. HTTP 422 `amount_locked` ở bước authorize: kết quả là `failed` với `errorCode = amount_locked`.
 
-Đây là thông tin tham khảo của phiên bản `3.11.18`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
+Đây là thông tin tham khảo của phiên bản `3.1118.2`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
 
 ## 15. Bảo mật
 

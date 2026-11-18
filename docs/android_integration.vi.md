@@ -1,6 +1,6 @@
 # XPAY Payment SDK cho Android native — Tài liệu tích hợp
 
-Phiên bản SDK 3.11.18
+Phiên bản SDK 3.1118.2
 
 SDK giúp app Android (Kotlin) của đối tác thu tiền bằng thẻ XPAY. SDK đảm nhận toàn bộ phần thẻ trong quy trình thanh toán: đọc thẻ (chạm NFC, quét QR hoặc nhập số thẻ), gửi yêu cầu
 authorize lên XPAY, hiển thị bước xác thực OTP/PIN khi XPAY yêu cầu, rồi trả về cho app **đúng một kết quả**.
@@ -58,16 +58,18 @@ SDK chỉ hiện các phương thức thiết bị chạy được. Chọn `card
 | Thành phần | Tối thiểu                    |
 | ---------- | ---------------------------- |
 | Android    | minSdk 24, Java 17, AndroidX |
+| Kotlin     | 2.1 trở lên                  |
 
 Lưu ý:
 
 1. App phải khai báo tương thích Java 17 (`compileOptions` và `jvmTarget`).
-2. SDK có thư viện native cho các ABI `arm64-v8a`, `armeabi-v7a` và `x86_64`. Nếu app khai báo `abiFilters`, chỉ giữ các ABI này.
-3. Kiểm thử trên thiết bị thật: quét QR cần camera, chạm thẻ cần điện thoại Android có NFC.
+2. **Kotlin:** SDK và các thư viện đi kèm được biên dịch bằng Kotlin 2.2.20 và phụ thuộc `kotlin-stdlib` 2.2.20. Compiler Kotlin 2.1 trở lên đọc được. Gradle sẽ nâng `kotlin-stdlib` của app lên 2.2.20. Đã kiểm tra bản build app dùng Kotlin 2.1.0, Android Gradle Plugin 8.11.2, Gradle 8.14.1 và JDK 17+. Bản `3.11.18` build bằng Kotlin 2.3.20 nên **không** dùng được với Kotlin 2.1: hãy dùng `3.1118.2` trở lên.
+3. SDK có thư viện native cho các ABI `arm64-v8a`, `armeabi-v7a` và `x86_64`. Nếu app khai báo `abiFilters`, chỉ giữ các ABI này.
+4. Kiểm thử trên thiết bị thật: quét QR cần camera, chạm thẻ cần điện thoại Android có NFC.
 
 ## 3. Cài đặt
 
-SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.11.18`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
+SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.1118.2`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
 
 XPAY gửi riêng cho bạn:
 
@@ -94,10 +96,10 @@ Luôn khai báo số phiên bản cụ thể, không dùng `+` hay `latest.relea
 
 **Cách B: file zip.**
 
-1. Tải `xpay-payment-sdk-android-3.11.18.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
+1. Tải `xpay-payment-sdk-android-3.1118.2.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
 
    ```bash
-   shasum -a 256 xpay-payment-sdk-android-3.11.18.zip
+   shasum -a 256 xpay-payment-sdk-android-3.1118.2.zip
    ```
 
    Kết quả phải trùng với mã trong ghi chú Release. Nếu XPAY gửi mã SHA-256 qua kênh riêng (email, chat), đối chiếu với mã đó.
@@ -127,7 +129,7 @@ android {
 }
 
 dependencies {
-    implementation("com.xperise.xpay.partner:flutter_release:3.11.18")
+    implementation("com.xperise.xpay.partner:flutter_release:3.1118.2")
 }
 ```
 
@@ -525,7 +527,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `card_nfc`     | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                          |
 | `card_nfc`     | `advance_counter`                                        | `error` | Không cập nhật được bộ đếm trên chip                                                                                                                                                                                                                          | `chip_uid`, `counter_sector`, `counter_block`  |
 
-Danh sách này phản ánh phiên bản `3.11.18` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
+Danh sách này phản ánh phiên bản `3.1118.2` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
 hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
@@ -593,6 +595,9 @@ Kiểm tra:
 2. Cách B: `maven { url = uri("xpay-sdk/repo") }` trỏ đúng thư mục `repo` của bộ SDK đã giải nén, và số phiên bản khớp với bộ SDK.
 3. Đã khai báo thêm `maven { url = uri("https://storage.googleapis.com/download.flutter.io") }`.
 4. Gradle có thể đã lưu cache kết quả lỗi cũ: chạy lại với `--refresh-dependencies`.
+
+**Build báo "Module was compiled with an incompatible version of Kotlin. The binary version of its metadata is 2.3.0, expected version is 2.1.0".**
+Đang dùng bản `3.11.18` (build bằng Kotlin 2.3.20). Đổi sang `3.1118.2` trở lên, build bằng Kotlin 2.2.20.
 
 **App crash khi khởi động SDK trên máy `x86`.**
 Thiếu `abiFilters` trong `app/build.gradle.kts`, xem [mục 3](#3-cài-đặt).

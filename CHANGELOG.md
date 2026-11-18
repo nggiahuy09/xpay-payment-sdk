@@ -1,8 +1,17 @@
 # Changelog
 
-All notable changes to the XPay Payment SDK are listed here. The SDK shares its version number with the XPay Merchant app released at the same time, so the number does not follow Semantic Versioning: read this file to find out whether a release changes the public API.
+All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the version has the form `3.<MMDD>.<N>`: `MMDD` is the release month and day (1118 is 18 November) and `N` counts the releases of that day. Versions before that (3.11.x) matched the XPay Merchant app. The number does not follow Semantic Versioning: read this file to find out whether a release changes the public API.
 
 Entries marked **Breaking** need a change in your app.
+
+## 3.1118.2
+
+Rebuilt with Kotlin 2.2.20 so that apps on Kotlin 2.1 or 2.2 can use the Android AAR. The SDK code is the same as 3.11.16. Use this version instead of 3.11.18.
+
+### Changed
+
+1. The AAR and its plugins are compiled with Kotlin 2.2.20 (metadata version 2.2.0) and depend on `kotlin-stdlib` 2.2.20. Version 3.11.18 was built with Kotlin 2.3.20 and cannot be read by a Kotlin 2.1 compiler.
+2. The Android library of the SDK (`android/build.gradle.kts`) pins the Kotlin Gradle plugin to 2.2.20.
 
 ## 3.11.18
 
