@@ -1,0 +1,137 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.flutter.plugins.flutter_plugin_android_lifecycle",
+    "module": "flutter_plugin_android_lifecycle_release",
+    "version": "3.1118.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "flutter_plugin_android_lifecycle_release-3.1118.2.aar",
+          "url": "flutter_plugin_android_lifecycle_release-3.1118.2.aar",
+          "size": 2494,
+          "sha512": "b48ec869149ee5c7d76c12ef38da88f55fca71496352b27a35ca38215a6767163273d12bb7d454f80df8bd5620da29f7d6e7f16403b812433ab9e058707432d4",
+          "sha256": "16fc5aaebb64858cbfaf303aad39e2afa85711c2c36f7244aefe827dfc09cd30",
+          "sha1": "df3b2bc4926b4b5454dba58fcb610ce940792468",
+          "md5": "598f3e66df391468a15563476ba32d9e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "androidx.annotation",
+          "module": "annotation",
+          "version": {
+            "requires": "1.10.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "flutter_plugin_android_lifecycle_release-3.1118.2.aar",
+          "url": "flutter_plugin_android_lifecycle_release-3.1118.2.aar",
+          "size": 2494,
+          "sha512": "b48ec869149ee5c7d76c12ef38da88f55fca71496352b27a35ca38215a6767163273d12bb7d454f80df8bd5620da29f7d6e7f16403b812433ab9e058707432d4",
+          "sha256": "16fc5aaebb64858cbfaf303aad39e2afa85711c2c36f7244aefe827dfc09cd30",
+          "sha1": "df3b2bc4926b4b5454dba58fcb610ce940792468",
+          "md5": "598f3e66df391468a15563476ba32d9e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "flutter_plugin_android_lifecycle_release-3.1118.2-sources.jar",
+          "url": "flutter_plugin_android_lifecycle_release-3.1118.2-sources.jar",
+          "size": 2659,
+          "sha512": "d848b9ac3a80bd88694f7d35de2abc2866f65393d53caa1f49513063e17fe497a4b7e1ed09dc3736f529a166f1491dfb78c703a51f0fe0950082488869f2b352",
+          "sha256": "2930f0a83f74dc7a57026b471c4443a3e5cb4f8b5f80bf45d161dd31675194c7",
+          "sha1": "82b1c36d1af62197547e6c132ae64f520e3ad7a7",
+          "md5": "fb7b3ee0458fe0f3ec0a8116c68f72ed"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "flutter_plugin_android_lifecycle_release-3.1118.2-javadoc.jar",
+          "url": "flutter_plugin_android_lifecycle_release-3.1118.2-javadoc.jar",
+          "size": 269835,
+          "sha512": "d870d09c3f114c20db1aac59145791ec22f4e75f6930b33b9768150faa2205cac5ce8ac135d2882370918c23387d2460faf9e1877ed33f720a2b4e9bc9b0df7e",
+          "sha256": "82622e7762223008fe8ca2dc695195cc7b49f482d8046b2a6263a1c1bbea7892",
+          "sha1": "05d1a7afe80150ab6e5e5b4edcf5d876bf267a57",
+          "md5": "f9ab3afcebf4a4ed2f2293205e8a988c"
+        }
+      ]
+    }
+  ]
+}

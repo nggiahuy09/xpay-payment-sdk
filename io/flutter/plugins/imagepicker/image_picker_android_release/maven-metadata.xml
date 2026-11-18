@@ -3,11 +3,11 @@
   <groupId>io.flutter.plugins.imagepicker</groupId>
   <artifactId>image_picker_android_release</artifactId>
   <versioning>
-    <latest>3.11.18</latest>
-    <release>3.11.18</release>
+    <latest>3.1118.2</latest>
+    <release>3.1118.2</release>
     <versions>
-      <version>3.11.18</version>
+      <version>3.1118.2</version>
     </versions>
-    <lastUpdated>20261118064327</lastUpdated>
+    <lastUpdated>20261118083729</lastUpdated>
   </versioning>
 </metadata>
