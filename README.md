@@ -4,7 +4,7 @@ Collect a payment with an XPay card from your own Flutter app. The SDK owns the 
 
 Your app keeps everything around it: the order, the payment session, and what happens after the result.
 
-> **Status: preview for integration and demos.** The Flutter SDK is the first delivery. Native Android (Kotlin) and iOS (Swift) packages are planned and will keep the same API shape.
+> **Status: preview for integration and demos.** The SDK is available for Flutter apps (this document) and for native Android (Kotlin) apps as an AAR: see the [Android native integration guide](docs/android_integration.vi.md) (Vietnamese).
 
 ## Contents
 
@@ -63,7 +63,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.11.16
+      ref: v3.11.18
 ```
 
 To update, change `ref` to a newer tag and run `flutter pub get`. Read [CHANGELOG.md](CHANGELOG.md) first: the version number does not follow Semantic Versioning, so the changelog is where breaking changes are listed.
@@ -195,9 +195,9 @@ While XPay is authorizing the card, the back button is disabled, so the cashier 
 
 `XPayPaymentRequest`, built with `XPayPaymentRequest.fromSession(...)`:
 
-| Field          | Type     | Required | Notes                                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sessionJson`  | `String` | Yes      | The whole body of `POST /merchant/rides/{order_id}/payment-session`. The SDK takes `session_token`, `amount` (whole đồng, at least 1,000), `external_ref` (1 to 64 characters), `payment_template.currency` (`VND` by default), `payment_template.product_type`, `entry_modes`, `ride_card`, `order_id` and the trip in `payment_template.enhanced_data` from it. See [Authentication](#authentication). |
+| Field         | Type     | Required | Notes                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sessionJson` | `String` | Yes      | The whole body of `POST /merchant/rides/{order_id}/payment-session`. The SDK takes `session_token`, `amount` (whole đồng, at least 1,000), `external_ref` (1 to 64 characters), `payment_template.currency` (`VND` by default), `payment_template.product_type`, `entry_modes`, `ride_card`, `order_id` and the trip in `payment_template.enhanced_data` from it. See [Authentication](#authentication). |
 
 A request that breaks these rules is rejected before anything is sent: `start` returns `failed` with `errorCode` `sdk_invalid_request`.
 

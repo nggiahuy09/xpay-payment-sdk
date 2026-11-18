@@ -4,6 +4,18 @@ All notable changes to the XPay Payment SDK are listed here. The SDK shares its 
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.11.18
+
+Documentation release. The SDK code is the same as 3.11.16.
+
+### Added
+
+1. Android native integration guide: [docs/android_integration.vi.md](docs/android_integration.vi.md) (Vietnamese). It covers installing the AAR from the `maven` branch or the Release zip, manifest setup, the payment session, the API reference, error codes and troubleshooting.
+
+### Changed
+
+1. The README no longer lists iOS as a planned package, and points native Android partners to the new guide.
+
 ## 3.11.16
 
 First release published on GitHub. Earlier builds were sent to partners as a zip file.
