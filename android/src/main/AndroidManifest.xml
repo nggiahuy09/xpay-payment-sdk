@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="com.xperise.xpay.payment.XPayPaymentActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:theme="@android:style/Theme.Light.NoTitleBar"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+</manifest>

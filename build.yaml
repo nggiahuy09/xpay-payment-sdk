@@ -1,0 +1,11 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        generate_for:
+          - lib/**/*_model.dart
+          - lib/**/*_models.dart
+      source_gen:combining_builder:
+        generate_for:
+          - lib/**/*_model.dart
+          - lib/**/*_models.dart

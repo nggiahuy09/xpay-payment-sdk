@@ -1,0 +1,23 @@
+name: xpay_payment_sdk_example
+description: "Demo host app for the XPay payment SDK."
+version: 1.0.0+1
+publish_to: 'none'
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  xpay_payment_sdk:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
