@@ -6,6 +6,8 @@ import '../api/xpay_config.dart';
 import '../api/xpay_log_event.dart';
 import '../api/xpay_payment.dart';
 import '../api/xpay_payment_result.dart';
+import '../core/presentation/payment/helpers/payment_host_cancellation.dart';
+import '../di/di.dart';
 import '../shared/loading/loading.dart';
 import 'mappers/xpay_embedded_message_mapper.dart';
 import 'xpay_embedded_api.g.dart';
@@ -55,6 +57,8 @@ final class XPayEmbeddedBridge extends NavigatorObserver implements XPayEmbedded
   @override
   Future<void> cancel() async {
     if (_pendingGenerations.contains(_generation)) _cancelledGenerations.add(_generation);
+    if (getIt.isRegistered<PaymentHostCancellation>() && getIt.get<PaymentHostCancellation>().request()) return;
+
     XPLoadingManager.hideDefaultOverlay();
     _navigatorKey.currentState?.popUntil((route) => route.isFirst);
   }

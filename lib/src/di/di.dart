@@ -6,6 +6,7 @@ import '../core/data/datasources/remote/payment_authorize_remote_datasrc.dart';
 import '../core/data/repositories/payment_authorize_repo_impl.dart';
 import '../core/domain/repositories/payment_authorize_repo.dart';
 import '../core/presentation/payment/helpers/payment_authorize_idempotency_tracker.dart';
+import '../core/presentation/payment/helpers/payment_host_cancellation.dart';
 import '../methods/nfc_tap/data/datasources/remote/chip_tap_remote_datasrc.dart';
 import '../methods/nfc_tap/data/repositories/chip_tap_repo_impl.dart';
 import '../methods/nfc_tap/domain/repositories/chip_tap_repo.dart';
@@ -19,6 +20,7 @@ const Duration _kReceiveTimeout = Duration(seconds: 30);
 
 Future<void> configureDependencies({required XPTokenProvider tokenProvider, required String baseUrl, void Function(XPayLogEvent event)? onLog}) async {
   if (getIt.isRegistered<PaymentAuthorizeIdempotencyTracker>() == false) getIt.registerSingleton(PaymentAuthorizeIdempotencyTracker());
+  if (getIt.isRegistered<PaymentHostCancellation>() == false) getIt.registerSingleton(PaymentHostCancellation());
 
   await _unregisterIfPresent<XPBusinessLogger>();
   await _unregisterIfPresent<XPRestClient>();

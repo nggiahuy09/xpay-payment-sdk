@@ -6,6 +6,8 @@ import 'package:pigeon/pigeon.dart';
     dartPackageName: 'xpay_payment_sdk',
     kotlinOut: 'android/src/main/kotlin/com/xperise/xpay/payment/XPayEmbeddedApi.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.xperise.xpay.payment', errorClassName: 'XPayEmbeddedError'),
+    swiftOut: 'ios/xpay_payment_sdk/Sources/xpay_payment_sdk/XPayEmbeddedApi.g.swift',
+    swiftOptions: SwiftOptions(errorClassName: 'XPayEmbeddedError'),
   ),
 )
 class XPayEmbeddedConfigMessage {

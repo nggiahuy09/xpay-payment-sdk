@@ -4,7 +4,7 @@ SDK giúp app Flutter của đối tác thu tiền bằng thẻ XPay. SDK đảm
 
 App của đối tác giữ mọi thứ xung quanh: đơn hàng, việc chọn phương thức thanh toán, và xử lý sau khi có kết quả.
 
-> **Trạng thái: bản preview dùng để tích hợp thử và demo.** SDK dùng được cho app Flutter (tài liệu này) và cho app Android native (Kotlin) qua AAR: xem [Tài liệu tích hợp Android native](docs/android_integration.vi.md).
+> **Trạng thái: bản preview dùng để tích hợp thử và demo.** SDK dùng được cho app Flutter (tài liệu này) cho app Android native (Kotlin) qua AAR, và cho app iOS native (Swift) qua Swift package: xem [Tài liệu tích hợp Android native](docs/android_integration.vi.md) và [Tài liệu tích hợp iOS native](docs/ios_integration.vi.md).
 
 Tài liệu dành cho đội mobile và backend của đối tác. Bản tiếng Anh: [README.md](README.md).
 
@@ -87,7 +87,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1118.2
+      ref: v3.1119.1
 ```
 
 Nâng cấp: đổi `ref` sang tag mới rồi chạy `flutter pub get`. Đọc [CHANGELOG.md](CHANGELOG.md) trước, vì số phiên bản không theo Semantic Versioning nên breaking change chỉ được ghi ở đó.
@@ -467,7 +467,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `card_nfc`     | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                                                                              |
 | `card_nfc`     | `advance_counter`                                        | `error` | Không cập nhật được bộ đếm trên chip                                                                                                                                                                                                                          | `chip_uid`, `counter_sector`, `counter_block`                                                      |
 
-Danh sách này phản ánh phiên bản `3.1118.2` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
+Danh sách này phản ánh phiên bản `3.1119.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
 
@@ -494,7 +494,7 @@ Hành vi chung:
 5. HTTP 409 ở bước authorize: kết quả là `duplicate`.
 6. HTTP 422 `amount_locked` ở bước authorize: kết quả là `failed` với `errorCode = amount_locked`.
 
-Đây là thông tin tham khảo của phiên bản `3.1118.2`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
+Đây là thông tin tham khảo của phiên bản `3.1119.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
 
 ## 15. Bảo mật
 
@@ -539,7 +539,7 @@ Dùng điện thoại Android thật có NFC để thử chạm thẻ.
 
 ## 17. Giới hạn hiện tại
 
-1. Mới có bản Flutter. Bản native Android và iOS đang được lên kế hoạch.
+1. App Android và iOS native dùng bộ SDK trong tài liệu tích hợp native tương ứng, không dùng tài liệu này.
 2. Màn hình SDK dùng giao diện của XPay, chưa tuỳ biến theme được. Chữ dùng font `Inter` nếu app có bundle font này, ngược lại dùng font mặc định của app.
 3. SDK không hiển thị màn hình thành công hay bị từ chối. App tự hiển thị dựa trên kết quả.
 4. Trên Android, `chip_tap` được hiện khi máy có NFC. Máy có NFC nhưng chip NFC không đọc được thẻ MIFARE Classic chỉ bị phát hiện khi chạm thẻ.
@@ -547,7 +547,7 @@ Dùng điện thoại Android thật có NFC để thử chạm thẻ.
 6. Lỗi mạng (`no_connection`, `no_host`, `timeout`) và phiên hết hạn (`token_expired`) trả `message` tiếng Anh ở cả hai ngôn ngữ.
 7. Số tiền là số nguyên, phù hợp với VND. Chưa hỗ trợ tiền tệ có phần thập phân.
 8. Trong lúc XPay đang authorize sau khi quét QR hoặc chạm thẻ, màn hình phía sau lớp loading là màn chọn phương thức.
-9. SDK không có app bar riêng và chỉ thoát được bằng nút back của hệ thống. iOS không có nút back hệ thống, nên trên iOS nhân viên chưa thoát được khỏi màn chọn phương thức.
+9. Trên Android, SDK không có app bar riêng và chỉ thoát được bằng nút back của hệ thống. iOS không có nút back hệ thống, nên trên iOS màn chọn phương thức có nút quay lại ở góc trên bên trái; bấm vào thì huỷ thanh toán như nút back của Android.
 
 ## 18. Câu hỏi thường gặp
 

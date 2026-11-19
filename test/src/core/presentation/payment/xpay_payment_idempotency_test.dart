@@ -10,6 +10,7 @@ import 'package:xpay_payment_sdk/src/core/domain/entities/payment_order_entity.d
 import 'package:xpay_payment_sdk/src/core/domain/repositories/payment_authorize_repo.dart';
 import 'package:xpay_payment_sdk/src/core/presentation/payment/blocs/xpay_payment_bloc.dart';
 import 'package:xpay_payment_sdk/src/core/presentation/payment/helpers/payment_authorize_idempotency_tracker.dart';
+import 'package:xpay_payment_sdk/src/core/presentation/payment/helpers/payment_host_cancellation.dart';
 import 'package:xpay_payment_sdk/src/di/di.dart';
 import 'package:xpay_payment_sdk/src/shared/business_logger/xp_business_logger.dart';
 
@@ -58,6 +59,7 @@ void main() {
   setUpAll(() {
     getIt.registerSingleton<PaymentAuthorizeRepository>(_repository);
     getIt.registerSingleton(PaymentAuthorizeIdempotencyTracker());
+    getIt.registerSingleton(PaymentHostCancellation());
     getIt.registerSingleton(const XPBusinessLogger(null));
   });
 

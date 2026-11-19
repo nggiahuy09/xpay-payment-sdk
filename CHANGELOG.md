@@ -4,6 +4,24 @@ All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the v
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.1119.1
+
+Adds the native iOS API. The Android API is unchanged.
+
+### Added
+
+1. iOS native API (`XPayPayment.initialize(config:)`, `XPayPayment.start(from:checkout:)`, `XPayCheckout`) for hosts without Flutter, added in Xcode by the URL of this repository (Swift Package Manager, product `XPayPayment`), or as the local Swift package in `xpay-payment-sdk-ios-<version>.zip`. Integration guide: [docs/ios_integration.vi.md](docs/ios_integration.vi.md) (Vietnamese).
+2. iOS only: the method list shows a back button in the top left corner. It cancels the payment, like the Android system back button on that screen. Before, an iOS cashier could not leave the method list.
+
+### Changed
+
+1. `app_settings` is pinned to `7.0.0` (was `^8.0.3`). Version 8 dropped CocoaPods, which the native iOS build needs. The Dart API used by the SDK is the same.
+
+### Fixed
+
+1. iOS: when the app closes the SDK screens while XPay is authorizing the card, `start` now waits for the authorization and returns its outcome, instead of `cancelled` without an `authId` while the card may already be charged. A payment that then needs verification ends as `cancelled` with its `authId`.
+2. iOS: when the app closes the SDK screens during verification, the `cancelled` result now keeps the `authId`.
+
 ## 3.1118.2
 
 Rebuilt with Kotlin 2.2.20 so that apps on Kotlin 2.1 or 2.2 can use the Android AAR. The SDK code is the same as 3.11.16. Use this version instead of 3.11.18.

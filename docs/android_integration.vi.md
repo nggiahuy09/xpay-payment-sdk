@@ -1,6 +1,6 @@
 # XPAY Payment SDK cho Android native — Tài liệu tích hợp
 
-Phiên bản SDK 3.1118.2
+Phiên bản SDK 3.1119.1
 
 SDK giúp app Android (Kotlin) của đối tác thu tiền bằng thẻ XPAY. SDK đảm nhận toàn bộ phần thẻ trong quy trình thanh toán: đọc thẻ (chạm NFC, quét QR hoặc nhập số thẻ), gửi yêu cầu
 authorize lên XPAY, hiển thị bước xác thực OTP/PIN khi XPAY yêu cầu, rồi trả về cho app **đúng một kết quả**.
@@ -69,7 +69,7 @@ Lưu ý:
 
 ## 3. Cài đặt
 
-SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.1118.2`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
+SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.1119.1`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
 
 XPAY gửi riêng cho bạn:
 
@@ -96,10 +96,10 @@ Luôn khai báo số phiên bản cụ thể, không dùng `+` hay `latest.relea
 
 **Cách B: file zip.**
 
-1. Tải `xpay-payment-sdk-android-3.1118.2.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
+1. Tải `xpay-payment-sdk-android-3.1119.1.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
 
    ```bash
-   shasum -a 256 xpay-payment-sdk-android-3.1118.2.zip
+   shasum -a 256 xpay-payment-sdk-android-3.1119.1.zip
    ```
 
    Kết quả phải trùng với mã trong ghi chú Release. Nếu XPAY gửi mã SHA-256 qua kênh riêng (email, chat), đối chiếu với mã đó.
@@ -129,7 +129,7 @@ android {
 }
 
 dependencies {
-    implementation("com.xperise.xpay.partner:flutter_release:3.1118.2")
+    implementation("com.xperise.xpay.partner:flutter_release:3.1119.1")
 }
 ```
 
@@ -527,7 +527,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `card_nfc`     | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                          |
 | `card_nfc`     | `advance_counter`                                        | `error` | Không cập nhật được bộ đếm trên chip                                                                                                                                                                                                                          | `chip_uid`, `counter_sector`, `counter_block`  |
 
-Danh sách này phản ánh phiên bản `3.1118.2` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
+Danh sách này phản ánh phiên bản `3.1119.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
 hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
@@ -571,7 +571,7 @@ Dùng điện thoại Android thật có NFC để thử chạm thẻ.
 2. SDK không hiển thị màn hình thành công hay bị từ chối. App tự hiển thị dựa trên kết quả.
 3. Các phương thức quét QR được hiện mà không kiểm tra máy có camera hay không. Nhân viên vẫn có thể chọn ảnh QR từ thư viện.
 4. SDK chỉ thoát bằng nút back của hệ thống.
-5. Bản phát hành hiện tại chỉ có Android (Flutter và Kotlin).
+5. App iOS native dùng bộ SDK riêng, xem [ios_integration.vi.md](ios_integration.vi.md).
 
 ## 17. Câu hỏi thường gặp
 

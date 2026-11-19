@@ -4,7 +4,7 @@ Collect a payment with an XPay card from your own Flutter app. The SDK owns the 
 
 Your app keeps everything around it: the order, the payment session, and what happens after the result.
 
-> **Status: preview for integration and demos.** The SDK is available for Flutter apps (this document) and for native Android (Kotlin) apps as an AAR: see the [Android native integration guide](docs/android_integration.vi.md) (Vietnamese).
+> **Status: preview for integration and demos.** The SDK is available for Flutter apps (this document) for native Android (Kotlin) apps as an AAR, and for native iOS (Swift) apps as a Swift package: see the [Android native integration guide](docs/android_integration.vi.md) and the [iOS native integration guide](docs/ios_integration.vi.md) (Vietnamese).
 
 ## Contents
 
@@ -63,7 +63,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1118.2
+      ref: v3.1119.1
 ```
 
 To update, change `ref` to a newer tag and run `flutter pub get`. Read [CHANGELOG.md](CHANGELOG.md) first: the version number does not follow Semantic Versioning, so the changelog is where breaking changes are listed.
@@ -284,11 +284,11 @@ Use a real Android phone with NFC to try the chip tap.
 
 ## Limitations
 
-1. Flutter only for now. Native Android and iOS packages are planned.
+1. Native Android and iOS apps use the packages described in the native integration guides, not this document.
 2. The SDK screens use XPay's styling. Theming is not configurable yet. Text uses the `Inter` font when your app bundles it, and your app's default font otherwise.
 3. The SDK shows no success or decline screen. Your app shows its own from the result.
 4. On Android, `chip_tap` is listed when the phone has NFC. A phone whose NFC chip cannot read MIFARE Classic cards is only detected when a card is tapped.
 5. QR methods are listed without checking for a camera.
 6. Network failures (`no_connection`, `no_host`, `timeout`) and an expired session (`token_expired`) carry English `message` copy in both languages.
 7. Amounts are whole units, which suits VND. Other currencies have not been considered yet.
-8. The SDK has no app bar of its own and is left only with the system back button. iOS has no system back button, so on iOS the cashier cannot leave the method list yet.
+8. On Android the SDK has no app bar of its own and is left only with the system back button. iOS has no system back button, so on iOS the method list shows a back button in the top left corner; it cancels the payment like the Android back button.

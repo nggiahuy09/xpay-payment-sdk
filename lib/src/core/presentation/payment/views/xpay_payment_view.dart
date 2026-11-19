@@ -21,6 +21,7 @@ import '../../../domain/entities/xpay_qr_prefix.dart';
 import '../../verification/views/verification_page.dart';
 import '../../verification/widgets/verification_recipient_picker_sheet_widget.dart';
 import '../blocs/xpay_payment_bloc.dart';
+import '../helpers/payment_host_cancellation.dart';
 import 'xpay_payment_entry_view.dart';
 
 final class XPayPaymentView extends StatefulWidget {
@@ -35,13 +36,28 @@ final class XPayPaymentView extends StatefulWidget {
 
 final class _XPayPaymentViewState extends State<XPayPaymentView> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final PaymentHostCancellation _hostCancellation = getIt.get<PaymentHostCancellation>();
 
+  String? _verificationAuthId;
   bool _isCardEntryOpen = false;
   bool _isCompleted = false;
+  bool _isHostCancelPending = false;
 
   double get _amount => widget.session.order.amount.toDouble();
 
   BuildContext? get _innerContext => _navigatorKey.currentState?.overlay?.context;
+
+  @override
+  void initState() {
+    super.initState();
+    _hostCancellation.attach(_cancelByHost);
+  }
+
+  @override
+  void dispose() {
+    _hostCancellation.detach(_cancelByHost);
+    super.dispose();
+  }
 
   Future<void> _startCardEntry(PaymentEntryMode entryMode) async {
     final navigator = _navigatorKey.currentState;
@@ -130,6 +146,16 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
     Navigator.of(context).pop(outcome);
   }
 
+  /// An authorization in flight may already charge the card, so its outcome is awaited instead.
+  void _cancelByHost() {
+    if (context.read<XPayPaymentBloc>().state is XPayPaymentAuthorizingState) {
+      _isHostCancelPending = true;
+      return;
+    }
+
+    _complete(PaymentFlowCancelledOutcomeEntity(_verificationAuthId));
+  }
+
   Future<void> _handleBack() async {
     if (context.read<XPayPaymentBloc>().state is XPayPaymentAuthorizingState) return;
 
@@ -141,6 +167,10 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
     final verification = authorize.verification;
     final authId = authorize.authId;
     if (authorize.canPresentVerification && verification != null && authId != null) {
+      // Nobody is left to verify it.
+      if (_isHostCancelPending) return _complete(PaymentFlowCancelledOutcomeEntity(authId));
+
+      _verificationAuthId = authId;
       if (entryMode == PaymentEntryMode.manualPan && verification.isAwaitingRecipient) {
         _chooseRecipientThenVerify(verification: verification, entryMode: entryMode, authId: authId);
       } else {
@@ -246,7 +276,7 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
               key: _navigatorKey,
               onGenerateInitialRoutes: (_, _) => [
                 MaterialPageRoute<void>(
-                  builder: (_) => XPayPaymentEntryView(entryModes: widget.entryModes, session: widget.session, onSelected: _startCardEntry),
+                  builder: (_) => XPayPaymentEntryView(entryModes: widget.entryModes, session: widget.session, onBackPressed: _handleBack, onSelected: _startCardEntry),
                 ),
               ],
             ),

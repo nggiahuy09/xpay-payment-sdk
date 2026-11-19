@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 
@@ -12,16 +13,18 @@ import '../../../domain/entities/payment_ride_card_entity.dart';
 import '../../../domain/entities/payment_session_entity.dart';
 
 final class XPayPaymentEntryView extends StatelessWidget {
-  const XPayPaymentEntryView({super.key, required this.entryModes, required this.session, required this.onSelected});
+  const XPayPaymentEntryView({super.key, required this.entryModes, required this.session, required this.onBackPressed, required this.onSelected});
 
   final List<PaymentEntryMode> entryModes;
   final PaymentSessionEntity session;
+  final void Function() onBackPressed;
   final void Function(PaymentEntryMode entryMode) onSelected;
 
   @override
   Widget build(BuildContext context) {
     final locale = XPLocalization.instance.locale;
     final viewLocale = locale.payment.xpay;
+
     final trip = session.trip;
     final pickupLocation = trip.pickupLocation;
     final destination = trip.destination;
@@ -35,6 +38,12 @@ final class XPayPaymentEntryView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: XPColorSurface.defaultColor,
+      appBar: defaultTargetPlatform == TargetPlatform.iOS
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: XPAppBarWidget(onBackPressed: onBackPressed),
+            )
+          : null,
       body: XPPlatformSafeAreaView(
         child: SafeArea(
           bottom: false,
