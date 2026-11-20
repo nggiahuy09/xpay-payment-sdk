@@ -1,0 +1,256 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.xperise.xpay.partner",
+    "module": "flutter_release",
+    "version": "3.1120.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "armeabi_v7a_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "arm64_v8a_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "x86_64_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "com.spencerccf.app_settings",
+          "module": "app_settings_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "io.flutter.plugins.flutter_plugin_android_lifecycle",
+          "module": "flutter_plugin_android_lifecycle_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "io.flutter.plugins.imagepicker",
+          "module": "image_picker_android_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "dev.steenbakker.mobile_scanner",
+          "module": "mobile_scanner_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "dev.flutter.plugins.nfcmanager",
+          "module": "nfc_manager_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "com.baseflow.permissionhandler",
+          "module": "permission_handler_android_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "com.xperise.xpay.payment",
+          "module": "xpay_payment_sdk_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "flutter_release-3.1120.1.aar",
+          "url": "flutter_release-3.1120.1.aar",
+          "size": 7629764,
+          "sha512": "5dc1038d2ab2616b0adb0baee2826deb3314734f6bad5f55920001a2e179c71fcea495bec585c60f159aa8183026423e90b2395e1f6d4f7f816b57ae74b0453b",
+          "sha256": "cf51b01163c28231e56f8f31d371a9ec1daa54050181cfe35cdc0b7e1cda3c4f",
+          "sha1": "ba5269e57f8202e34f4173ea56c823bec085dd93",
+          "md5": "9d202f6df9cf1baa1666b1ae4dd248cf"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "armeabi_v7a_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "arm64_v8a_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "io.flutter",
+          "module": "x86_64_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "com.spencerccf.app_settings",
+          "module": "app_settings_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "io.flutter.plugins.flutter_plugin_android_lifecycle",
+          "module": "flutter_plugin_android_lifecycle_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "io.flutter.plugins.imagepicker",
+          "module": "image_picker_android_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "dev.steenbakker.mobile_scanner",
+          "module": "mobile_scanner_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "dev.flutter.plugins.nfcmanager",
+          "module": "nfc_manager_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "com.baseflow.permissionhandler",
+          "module": "permission_handler_android_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        },
+        {
+          "group": "com.xperise.xpay.payment",
+          "module": "xpay_payment_sdk_release",
+          "version": {
+            "requires": "3.1120.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "flutter_release-3.1120.1.aar",
+          "url": "flutter_release-3.1120.1.aar",
+          "size": 7629764,
+          "sha512": "5dc1038d2ab2616b0adb0baee2826deb3314734f6bad5f55920001a2e179c71fcea495bec585c60f159aa8183026423e90b2395e1f6d4f7f816b57ae74b0453b",
+          "sha256": "cf51b01163c28231e56f8f31d371a9ec1daa54050181cfe35cdc0b7e1cda3c4f",
+          "sha1": "ba5269e57f8202e34f4173ea56c823bec085dd93",
+          "md5": "9d202f6df9cf1baa1666b1ae4dd248cf"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "flutter_release-3.1120.1-sources.jar",
+          "url": "flutter_release-3.1120.1-sources.jar",
+          "size": 1318,
+          "sha512": "db2aa374413c8d2af6059c4087293913c73a5db28275d872ee6c92e68925652e6d2ad81bb34317327ea73aa40911f9634ea1379172b26f725afc9b516ca5513c",
+          "sha256": "1730e73bcad85f75a2388ee3226af05ef216d3dfb09eece89967b43157160436",
+          "sha1": "129563d8009dbfbb2cfdf8dedeedebc1fa6c0931",
+          "md5": "f714e659918ff163c91e2465f1634a94"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "flutter_release-3.1120.1-javadoc.jar",
+          "url": "flutter_release-3.1120.1-javadoc.jar",
+          "size": 261624,
+          "sha512": "a30c118137531589150bf92c1d7dd1e233b84de530f153c700a8addc79b5c5d707437d44d2898a53bb961de91aac3bd0bd2738bf9cfc0da56b6607653698a12e",
+          "sha256": "d8ad96a0a7e707b241adb00f1f1520c11bf5f7e3cc15d529a480af9155a02c5e",
+          "sha1": "4cde74d6f3e14860fe27652457ae567606b8f08e",
+          "md5": "2a825eeb0ef8b0db105e10c5ab62a118"
+        }
+      ]
+    }
+  ]
+}
