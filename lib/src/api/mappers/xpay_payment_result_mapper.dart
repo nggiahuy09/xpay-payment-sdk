@@ -12,6 +12,7 @@ extension PaymentFlowOutcomeEntityMapper on PaymentFlowOutcomeEntity {
     final PaymentFlowCancelledOutcomeEntity outcome => XPayPaymentResult(status: XPayPaymentStatus.cancelled, authId: outcome.authId),
     PaymentFlowConflictOutcomeEntity _ => XPayPaymentResult(status: XPayPaymentStatus.duplicate, message: locale.payment.xpay.paymentDuplicateRequestBody),
     final PaymentFlowFailedOutcomeEntity outcome => outcome._toResult(locale),
+    final PaymentFlowAuthorizeFailedOutcomeEntity outcome => outcome._toResult(locale),
     PaymentFlowUnsupportedOutcomeEntity _ => const XPayPaymentResult(status: XPayPaymentStatus.unsupported),
   };
 }
@@ -79,6 +80,14 @@ extension on PaymentFlowFailedOutcomeEntity {
     authId: authId,
     errorCode: errorCode,
     message: displayMessage ?? locale.payment.xpay.resultGenericError(errorCode),
+  );
+}
+
+extension on PaymentFlowAuthorizeFailedOutcomeEntity {
+  XPayPaymentResult _toResult(XPLocaleBase locale) => XPayPaymentResult(
+    status: XPayPaymentStatus.failed,
+    errorCode: errorCode,
+    message: reason.getBody(locale, entryMode, () => displayMessage ?? locale.payment.xpay.resultGenericError(errorCode)),
   );
 }
 

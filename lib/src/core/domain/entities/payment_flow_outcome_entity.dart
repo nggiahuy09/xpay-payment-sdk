@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
+import 'create_payment_authorize_failure_reason_enum.dart';
 import 'payment_authorize_entity.dart';
 import 'payment_entry_mode_enum.dart';
 import 'payment_verify_entity.dart';
@@ -68,6 +69,18 @@ final class PaymentFlowFailedOutcomeEntity extends PaymentFlowOutcomeEntity {
 
   @override
   List<Object?> get props => [authId, displayMessage, errorCode];
+}
+
+final class PaymentFlowAuthorizeFailedOutcomeEntity extends PaymentFlowOutcomeEntity {
+  const PaymentFlowAuthorizeFailedOutcomeEntity({required this.entryMode, required this.reason, this.displayMessage, this.errorCode});
+
+  final PaymentEntryMode entryMode;
+  final CreatePaymentAuthorizeFailureReason reason;
+  final String? displayMessage;
+  final String? errorCode;
+
+  @override
+  List<Object?> get props => [entryMode, reason, displayMessage, errorCode];
 }
 
 final class PaymentFlowUnsupportedOutcomeEntity extends PaymentFlowOutcomeEntity {

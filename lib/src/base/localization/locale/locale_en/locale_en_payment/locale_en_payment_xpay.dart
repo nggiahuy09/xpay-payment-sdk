@@ -78,6 +78,26 @@ final class $XPLocaleENPaymentXpay implements $XPLocaleBasePaymentXpay {
   String get paymentDuplicateRequestBody => 'This request matches a payment that was just sent. Check the transaction list before creating a new payment.';
 
   @override
+  String get paymentTokenNotFoundBody => 'This payment code does not exist. Please ask the customer to open the QR code in the app again.';
+  @override
+  String get paymentManualPanNotFoundBody => 'The card details entered do not exist. Please check and enter the correct card number.';
+  @override
+  String get paymentCardQrNotFoundBody => 'No card matches this QR code. Please scan the QR code printed on the card again.';
+  @override
+  String get paymentChipTapNotFoundBody => 'The tapped card cannot be recognized. Please use the correct card provided by XPERISE.';
+  @override
+  String get paymentRideCardNotFoundBody => 'This ride is no longer assigned to you or can no longer be paid. Please check the ride again.';
+
+  @override
+  String get paymentNoRegisteredPhoneBody => 'No phone number was found to send the OTP to complete the payment. Please use another card, or contact your corporate admin.';
+  @override
+  String get paymentStaticCodeUnavailableBody => 'This card does not have a PIN set up to complete the payment. Please use another card, or contact your corporate admin.';
+  @override
+  String get paymentOtpDeliveryFailedBody => 'The OTP could not be sent to the cardholder\'s phone number. Please try again.';
+  @override
+  String get paymentRideAlreadyPaidBody => 'This ride already has a payment. Please check the ride status again.';
+
+  @override
   String get paymentDeclinedTitle => 'Payment not successful';
   @override
   String get paymentDeclinedBody => 'The transaction was recorded but the payment was not completed.';

@@ -42,6 +42,17 @@ abstract class $XPLocaleBasePaymentXpay {
   String get paymentDuplicateRequestTitle;
   String get paymentDuplicateRequestBody;
 
+  String get paymentTokenNotFoundBody;
+  String get paymentManualPanNotFoundBody;
+  String get paymentCardQrNotFoundBody;
+  String get paymentChipTapNotFoundBody;
+  String get paymentRideCardNotFoundBody;
+
+  String get paymentNoRegisteredPhoneBody;
+  String get paymentStaticCodeUnavailableBody;
+  String get paymentOtpDeliveryFailedBody;
+  String get paymentRideAlreadyPaidBody;
+
   String get paymentDeclinedTitle;
   String get paymentDeclinedBody;
 

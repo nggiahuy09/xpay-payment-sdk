@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../api/xpay_log_event.dart';
 import '../../../../di/di.dart';
 import '../../../../shared/business_logger/xp_business_logger.dart';
+import '../../../domain/entities/create_payment_authorize_failure_reason_enum.dart';
 import '../../../domain/entities/payment_authorize_entity.dart';
 import '../../../domain/entities/payment_chip_tap_entity.dart';
 import '../../../domain/entities/payment_entry_mode_enum.dart';
@@ -78,7 +79,7 @@ final class XPayPaymentBloc extends Bloc<XPayPaymentEvent, XPayPaymentState> {
           return;
         }
 
-        emit(XPayPaymentAuthorizeErrorState(displayMessage: failure.displayMessage, errorCode: failure.errorCode, attempt: _authorizeAttempt));
+        emit(XPayPaymentAuthorizeErrorState(entryMode: entryMode, displayMessage: failure.displayMessage, errorCode: failure.errorCode, attempt: _authorizeAttempt));
       },
       (authorize) {
         _logAuthorizeOutcome(authorize, entryMode);

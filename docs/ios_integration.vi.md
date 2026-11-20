@@ -1,6 +1,6 @@
 # XPAY Payment SDK cho iOS native — Tài liệu tích hợp
 
-Phiên bản SDK 3.1119.1
+Phiên bản SDK 3.1120.1
 
 SDK giúp app iOS (Swift) của đối tác thu tiền bằng thẻ XPAY. SDK đảm nhận toàn bộ phần thẻ trong quy trình thanh toán: đọc thẻ (quét QR hoặc nhập số thẻ), gửi yêu cầu authorize lên XPAY,
 hiển thị bước xác thực OTP/PIN khi XPAY yêu cầu, rồi trả về cho app **đúng một kết quả**.
@@ -72,7 +72,7 @@ Lưu ý:
 
 ## 3. Cài đặt
 
-SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.1119.1`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
+SDK được phát hành trên GitHub: <https://github.com/nggiahuy09/xpay-payment-sdk>. Mỗi bản có một tag dạng `v3.1120.1`, một mục trong [CHANGELOG.md](../CHANGELOG.md) và một bản Release. Số phiên bản **không** theo Semantic Versioning: đọc CHANGELOG trước khi nâng cấp để biết bản mới có thay đổi cần sửa code hay không.
 
 XPAY gửi riêng cho bạn:
 
@@ -85,14 +85,14 @@ SDK được cài bằng Swift Package Manager, theo một trong hai cách. Các
 **Cách A: URL của repo GitHub.**
 
 1. Trong Xcode: **File → Add Package Dependencies…**, dán URL `https://github.com/nggiahuy09/xpay-payment-sdk` vào ô tìm kiếm.
-2. Ở **Dependency Rule**, chọn **Exact Version** và nhập `3.1119.1`. Số phiên bản không theo Semantic Versioning, nên đừng chọn "Up to Next Major/Minor": Xcode có thể tự nâng lên một bản cần sửa code.
+2. Ở **Dependency Rule**, chọn **Exact Version** và nhập `3.1120.1`. Số phiên bản không theo Semantic Versioning, nên đừng chọn "Up to Next Major/Minor": Xcode có thể tự nâng lên một bản cần sửa code.
 3. Thêm product `XPayPayment` vào target app.
 
 Nếu project dùng `Package.swift` thay cho Xcode project:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/nggiahuy09/xpay-payment-sdk", exact: "3.1119.1"),
+    .package(url: "https://github.com/nggiahuy09/xpay-payment-sdk", exact: "3.1120.1"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "XPayPayment", package: "xpay-payment-sdk")]),
@@ -103,10 +103,10 @@ Xcode tải các xcframework (khoảng 75 MB) từ trang Release của đúng ph
 
 **Cách B: file zip.**
 
-1. Tải `xpay-payment-sdk-ios-3.1119.1.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
+1. Tải `xpay-payment-sdk-ios-3.1120.1.zip` ở trang [Releases](https://github.com/nggiahuy09/xpay-payment-sdk/releases). Mã SHA-256 của file nằm trong ghi chú của Release. Kiểm tra trước khi dùng:
 
    ```bash
-   shasum -a 256 xpay-payment-sdk-ios-3.1119.1.zip
+   shasum -a 256 xpay-payment-sdk-ios-3.1120.1.zip
    ```
 
    Kết quả phải trùng với mã trong ghi chú Release. Nếu XPAY gửi mã SHA-256 qua kênh riêng (email, chat), đối chiếu với mã đó.
@@ -510,6 +510,17 @@ Các giá trị `errorCode` khác được XPAY trả về và SDK chuyển nguy
 
 `message` của các mã này là câu thông báo chung kèm dòng mã lỗi (mục 9).
 
+Các mã ở bước authorize có câu thông báo riêng, `message` nêu rõ nguyên nhân thay vì câu chung:
+
+| Mã                        | Nguyên nhân                                                                                        | Cách xử lý                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `not_found`               | XPAY không tìm thấy thẻ hoặc mã thanh toán đã quét, chạm hoặc nhập. `message` nêu theo phương thức | Kiểm tra lại thẻ hoặc mã rồi thử lại                   |
+| `no_registered_phone`     | Thẻ không có số điện thoại để gửi OTP                                                              | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
+| `static_code_unavailable` | Thẻ chưa được thiết lập mã PIN                                                                     | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
+| `otp_delivery_failed`     | Không gửi được OTP tới số điện thoại của chủ thẻ                                                   | Thử lại                                                |
+| `ride_card_not_found`     | Chuyến đi không còn được giao cho tài xế, hoặc không còn ở trạng thái thanh toán được              | Kiểm tra lại chuyến đi ở phía app                      |
+| `ride_already_paid`       | Chuyến đi đã có giao dịch thanh toán                                                               | Kiểm tra trạng thái chuyến trước khi thu lại           |
+
 ## 11. Thử lại và chống trừ tiền hai lần
 
 Mỗi yêu cầu authorize mang một idempotency key, để request gửi lại không bị trừ tiền hai lần.
@@ -557,7 +568,7 @@ Sự kiện **không bao giờ** chứa số thẻ, cryptogram, nonce, mã xác 
 | `verification` | `verification_expired`                     | `error` | Hết thời gian xác thực                                                                                                                                                                                                                                        | `auth_id`                                      |
 | `verification` | `verification_abandon`                     | `info`  | Nhân viên rời màn hình xác thực                                                                                                                                                                                                                               | `auth_id`                                      |
 
-Danh sách này phản ánh phiên bản `3.1119.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
+Danh sách này phản ánh phiên bản `3.1120.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ;
 hãy dùng `XPayPaymentResult`.
 
 ## 14. Bảo mật

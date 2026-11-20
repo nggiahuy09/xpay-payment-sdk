@@ -4,6 +4,15 @@ All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the v
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.1120.1
+
+Aligns the payment error messages with the XPay Merchant app. The public API is unchanged.
+
+### Changed
+
+1. `declined` results now carry a specific `message` for more `declineCode` values: `card_outside_validity_window`, `card_link_inactive`, `employee_policy_violation`, `employee_policy_unavailable`, `chip_cryptogram_invalid`, `chip_nonce_replayed`, `chip_counter_replay`, `chip_credential_revoked`, `chip_credential_not_active`, `service_payment_auth_failed`, `service_payment_invalid_request`, `service_payment_in_flight`, `service_payment_failed`, `service_payment_declined` and `service_payment_unavailable`. Before, these codes fell back to the generic decline copy with an error code line.
+2. `failed` results from the authorization step now carry a specific `message` for `not_found` (worded for the method the cashier used), `no_registered_phone`, `static_code_unavailable`, `otp_delivery_failed`, `ride_card_not_found` and `ride_already_paid`. `errorCode` keeps the raw code. See the error code table in the README.
+
 ## 3.1119.1
 
 Adds the native iOS API. The Android API is unchanged.

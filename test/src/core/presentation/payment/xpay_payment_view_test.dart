@@ -137,7 +137,10 @@ void main() {
 
     await _submitPan(tester, '4111111111111111');
 
-    expect(recorder.outcome, isA<PaymentFlowFailedOutcomeEntity>().having((o) => o.errorCode, 'errorCode', 'internal_error'));
+    expect(
+      recorder.outcome,
+      isA<PaymentFlowAuthorizeFailedOutcomeEntity>().having((o) => o.errorCode, 'errorCode', 'internal_error').having((o) => o.entryMode, 'entryMode', PaymentEntryMode.manualPan),
+    );
   });
 
   testWidgets('a 409 completes the flow as a conflict', (tester) async {

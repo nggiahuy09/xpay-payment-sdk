@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xpay_payment_sdk/src/api/mappers/xpay_payment_result_mapper.dart';
 import 'package:xpay_payment_sdk/src/base/localization/locale/locale_en/locale_en.dart';
+import 'package:xpay_payment_sdk/src/core/domain/entities/create_payment_authorize_failure_reason_enum.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_authorize_entity.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_decline_entity.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_entry_mode_enum.dart';
@@ -140,6 +141,29 @@ void main() {
       expect(carried.status, XPayPaymentStatus.failed);
       expect(carried.message, 'No internet');
       expect(carried.errorCode, 'no_connection');
+      expect(generic.message, _locale.payment.xpay.resultGenericError('internal_error'));
+    });
+
+    test('authorize failed names the known reason for the entry mode, then falls back to the failure copy', () {
+      final notFound = _map(
+        const PaymentFlowAuthorizeFailedOutcomeEntity(entryMode: PaymentEntryMode.cardQr, reason: CreatePaymentAuthorizeFailureReason.notFound, errorCode: 'not_found'),
+      );
+      final carried = _map(
+        const PaymentFlowAuthorizeFailedOutcomeEntity(
+          entryMode: PaymentEntryMode.manualPan,
+          reason: CreatePaymentAuthorizeFailureReason.unknown,
+          displayMessage: 'No internet',
+          errorCode: 'no_connection',
+        ),
+      );
+      final generic = _map(
+        const PaymentFlowAuthorizeFailedOutcomeEntity(entryMode: PaymentEntryMode.manualPan, reason: CreatePaymentAuthorizeFailureReason.unknown, errorCode: 'internal_error'),
+      );
+
+      expect(notFound.status, XPayPaymentStatus.failed);
+      expect(notFound.errorCode, 'not_found');
+      expect(notFound.message, _locale.payment.xpay.paymentCardQrNotFoundBody);
+      expect(carried.message, 'No internet');
       expect(generic.message, _locale.payment.xpay.resultGenericError('internal_error'));
     });
 

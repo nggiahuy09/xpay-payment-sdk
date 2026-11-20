@@ -87,7 +87,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1119.1
+      ref: v3.1120.1
 ```
 
 Nâng cấp: đổi `ref` sang tag mới rồi chạy `flutter pub get`. Đọc [CHANGELOG.md](CHANGELOG.md) trước, vì số phiên bản không theo Semantic Versioning nên breaking change chỉ được ghi ở đó.
@@ -419,6 +419,17 @@ Các giá trị `errorCode` khác được XPay trả về và SDK chuyển nguy
 
 `message` của các mã này là câu thông báo chung kèm dòng `Mã lỗi:` (hoặc `Error code:`).
 
+Các mã ở bước authorize có câu thông báo riêng, `message` nêu rõ nguyên nhân thay vì câu chung:
+
+| Mã                        | Nguyên nhân                                                                                        | Cách xử lý                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `not_found`               | XPay không tìm thấy thẻ hoặc mã thanh toán đã quét, chạm hoặc nhập. `message` nêu theo phương thức | Kiểm tra lại thẻ hoặc mã rồi thử lại                   |
+| `no_registered_phone`     | Thẻ không có số điện thoại để gửi OTP                                                              | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
+| `static_code_unavailable` | Thẻ chưa được thiết lập mã PIN                                                                     | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
+| `otp_delivery_failed`     | Không gửi được OTP tới số điện thoại của chủ thẻ                                                   | Thử lại                                                |
+| `ride_card_not_found`     | Chuyến đi không còn được giao cho tài xế, hoặc không còn ở trạng thái thanh toán được              | Kiểm tra lại chuyến đi ở phía app                      |
+| `ride_already_paid`       | Chuyến đi đã có giao dịch thanh toán                                                               | Kiểm tra trạng thái chuyến trước khi thu lại           |
+
 ## 11. Thử lại và chống trừ tiền hai lần
 
 Mỗi yêu cầu authorize mang một idempotency key, để request gửi lại không bị trừ tiền hai lần.
@@ -467,7 +478,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `card_nfc`     | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                                                                              |
 | `card_nfc`     | `advance_counter`                                        | `error` | Không cập nhật được bộ đếm trên chip                                                                                                                                                                                                                          | `chip_uid`, `counter_sector`, `counter_block`                                                      |
 
-Danh sách này phản ánh phiên bản `3.1119.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
+Danh sách này phản ánh phiên bản `3.1120.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
 
@@ -494,7 +505,7 @@ Hành vi chung:
 5. HTTP 409 ở bước authorize: kết quả là `duplicate`.
 6. HTTP 422 `amount_locked` ở bước authorize: kết quả là `failed` với `errorCode = amount_locked`.
 
-Đây là thông tin tham khảo của phiên bản `3.1119.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
+Đây là thông tin tham khảo của phiên bản `3.1120.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
 
 ## 15. Bảo mật
 

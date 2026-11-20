@@ -63,7 +63,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1119.1
+      ref: v3.1120.1
 ```
 
 To update, change `ref` to a newer tag and run `flutter pub get`. Read [CHANGELOG.md](CHANGELOG.md) first: the version number does not follow Semantic Versioning, so the changelog is where breaking changes are listed.
@@ -241,6 +241,17 @@ Codes tied to the payment session:
 | `ride_payment_session_revoked` | Your backend opened a newer session for the same ride (HTTP 401)                              | Use the latest session; avoid opening several sessions for one ride                 |
 
 The `message` of these codes is the generic copy followed by an `Error code:` line.
+
+Codes from the authorization step that carry their own `message`, naming the cause instead of the generic copy:
+
+| Code                      | Cause                                                                                                      | What to do                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `not_found`               | XPay found no card or payment code for what was scanned, tapped or typed. `message` names the method used. | Check the card or code and try again          |
+| `no_registered_phone`     | The card has no phone number to send the OTP to.                                                           | Use another card, or ask the corporate admin  |
+| `static_code_unavailable` | The card has no PIN set up.                                                                                | Use another card, or ask the corporate admin  |
+| `otp_delivery_failed`     | The OTP could not be sent to the cardholder's phone.                                                       | Try again                                     |
+| `ride_card_not_found`     | The ride is no longer assigned to the driver, or can no longer be paid.                                    | Check the ride on your side                   |
+| `ride_already_paid`       | The ride already has a payment.                                                                            | Check the ride status before collecting again |
 
 ## Retries and duplicate payments
 

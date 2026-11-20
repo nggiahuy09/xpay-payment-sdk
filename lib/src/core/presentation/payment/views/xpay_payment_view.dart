@@ -251,7 +251,7 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
         _complete(const PaymentFlowConflictOutcomeEntity());
         break;
       case XPayPaymentAuthorizeErrorState _:
-        _complete(PaymentFlowFailedOutcomeEntity(displayMessage: state.displayMessage, errorCode: state.errorCode));
+        _complete(PaymentFlowAuthorizeFailedOutcomeEntity(entryMode: state.entryMode, reason: state.reason, displayMessage: state.displayMessage, errorCode: state.errorCode));
         break;
       case XPayPaymentInvalidQrState _:
         XPSnackBarManager.show(level: XPSnackBarMessageLevel.error, title: xpayLocale.invalidQrCode);
