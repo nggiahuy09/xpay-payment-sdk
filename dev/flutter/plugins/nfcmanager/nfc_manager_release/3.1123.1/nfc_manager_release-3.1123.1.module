@@ -1,0 +1,130 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "dev.flutter.plugins.nfcmanager",
+    "module": "nfc_manager_release",
+    "version": "3.1123.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "nfc_manager_release-3.1123.1.aar",
+          "url": "nfc_manager_release-3.1123.1.aar",
+          "size": 100084,
+          "sha512": "728cfda39c1cd118dd798f11ac018cca3bdfa1adc414dfdb4c4fb7f3a34f3478a960af2488c3cab95e5a65a9d622767742863ee5f07dcc7eb5504e75fcd53aa5",
+          "sha256": "0facc3574c1477906a8dae434141ae4b0f38654ab6b3c19c9eb79565c4bf9008",
+          "sha1": "ce8a8fdc614f7978937287fe51983d1a515d1b55",
+          "md5": "8f9efe8d992cac8df181a7858d18532b"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "nfc_manager_release-3.1123.1.aar",
+          "url": "nfc_manager_release-3.1123.1.aar",
+          "size": 100084,
+          "sha512": "728cfda39c1cd118dd798f11ac018cca3bdfa1adc414dfdb4c4fb7f3a34f3478a960af2488c3cab95e5a65a9d622767742863ee5f07dcc7eb5504e75fcd53aa5",
+          "sha256": "0facc3574c1477906a8dae434141ae4b0f38654ab6b3c19c9eb79565c4bf9008",
+          "sha1": "ce8a8fdc614f7978937287fe51983d1a515d1b55",
+          "md5": "8f9efe8d992cac8df181a7858d18532b"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "nfc_manager_release-3.1123.1-sources.jar",
+          "url": "nfc_manager_release-3.1123.1-sources.jar",
+          "size": 10941,
+          "sha512": "92a1de752828b70db36d7c52b9596ab9870bff1de9be444270cab0997d510d0376e6ad4491ff4264cc47e7a8186d3017c3470c926b75bf4192a435ca6d33dfdd",
+          "sha256": "d0d9c504779a768f1e6c873ec5d7be895f795b39a8c329ae72e31a5c45a4b16b",
+          "sha1": "4202269cc7d4c49abed608831f309748d9101701",
+          "md5": "9eefbfbdaa3d6cbecc6db1df4b417b3e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "nfc_manager_release-3.1123.1-javadoc.jar",
+          "url": "nfc_manager_release-3.1123.1-javadoc.jar",
+          "size": 434355,
+          "sha512": "5cd158239cc616b08fa4c3da11bbb82bacddc04e7999b16c7112199d0c3cf1483deabe934efcf6e29bc1256c77534cea89dca421c6b218d031278f2317acbef1",
+          "sha256": "5621ff649f8f83a658228e90a6b72033ece8fc815b421b4deb5ffbbd04c140bc",
+          "sha1": "e264a8b2af3c3f2c04492be67ed15933a28caa37",
+          "md5": "733c11f21d7a21fb385576acb2de7e9d"
+        }
+      ]
+    }
+  ]
+}
