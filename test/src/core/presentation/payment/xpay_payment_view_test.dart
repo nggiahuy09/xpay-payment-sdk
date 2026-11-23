@@ -9,6 +9,7 @@ import 'package:xpay_payment_sdk/src/core/domain/entities/create_payment_product
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_authorize_entity.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_entry_mode_enum.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_flow_outcome_entity.dart';
+import 'package:xpay_payment_sdk/src/core/domain/entities/payment_method_enum.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_order_entity.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_session_entity.dart';
 import 'package:xpay_payment_sdk/src/core/domain/entities/payment_trip_entity.dart';
@@ -29,6 +30,7 @@ const _session = PaymentSessionEntity(
   entryModes: [PaymentEntryMode.manualPan],
   order: PaymentOrderEntity(productType: CreatePaymentProductType.taxiTrip, currency: 'VND', externalRef: 'ACME_1234', amount: 100000),
   trip: PaymentTripEntity(),
+  method: PaymentMethod.card,
   sessionToken: 'rps_token',
 );
 

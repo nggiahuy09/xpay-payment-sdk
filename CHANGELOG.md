@@ -4,6 +4,34 @@ All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the v
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.1123.1
+
+Adds payment from the rider's corporate wallet. No public type, field or method is renamed or removed, but a wallet payment succeeds without an `authId`: see **Breaking** below.
+
+### Added
+
+1. Corporate wallet payments. When the session response has `"payment_method": "corporate_wallet"` (a dispatch ride booked on the company's wallet), `start` lists the wallet methods instead of the card methods. The amount and trip summary stay the same.
+   1. **Show QR code:** the SDK creates a QR for the locked amount, the rider scans it with the XPERISE app and pays from the company wallet. The SDK checks the payment every 3 seconds and returns as soon as it is paid.
+   2. **Send code by SMS** and **Send code by email:** one row per rider and channel that XPay has on file, the booker first. The SDK sends a 6-digit code, the cashier types the code the rider reads out, and the SDK verifies it. The code screen can resend the code (40 seconds after the last send) and switch to another phone number or email.
+2. Sessions without `payment_method`, or with `"payment_method": "card"`, keep the card flow.
+
+### Changed
+
+1. A `corporate_wallet` session with empty `entry_modes` is accepted. Before, `start` returned `failed` with `sdk_invalid_request`.
+2. New dependency `pretty_qr_code` `^3.6.0`, used to draw the QR code.
+
+### Breaking
+
+1. A successful wallet payment is `captured` with `externalRef`, `amount` and `currency`, plus `createdAt` when it was paid at the QR. `authId` and `captureId` are `null`, because no card payment is made. If your app or backend confirms payments only by `authId`, confirm wallet payments by `externalRef`.
+
+### Results of a wallet payment
+
+1. `declined`: XPay declined the payment made at the QR.
+2. `expired` without `authId`: the QR expired, or the payment session expired while the SDK was waiting for the QR to be paid.
+3. `failed`: the ride amount changed (`amount_locked`), the ride is closed (`ride_not_found`), the ride is not on the corporate wallet (`ride_not_on_corporate_wallet`), XPay refused the payment session (`token_expired`, `ride_payment_session_revoked`), or XPay refused to report the QR payment. `errorCode` keeps the raw code.
+4. `cancelled`: the cashier left before the rider paid. Leaving the QR screen first cancels the QR with XPay. If XPay cannot confirm the cancellation, the SDK stays on the QR screen and says so, because the rider could still pay it.
+5. While the wallet code is being verified, the back button is disabled. A native app that closes the SDK screens at that moment gets the verification result instead of `cancelled`. Closing them while the QR is shown cancels the QR first.
+
 ## 3.1120.1
 
 Aligns the payment error messages with the XPay Merchant app. The public API is unchanged.

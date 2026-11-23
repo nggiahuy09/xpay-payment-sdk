@@ -6,6 +6,7 @@ import '../../base/localization/localization.dart';
 import '../../core/data/datasources/remote/models/payment_session_response_model.dart';
 import '../../core/domain/entities/create_payment_product_type_enum.dart';
 import '../../core/domain/entities/payment_entry_mode_enum.dart';
+import '../../core/domain/entities/payment_method_enum.dart';
 import '../../core/domain/entities/payment_order_entity.dart';
 import '../../core/domain/entities/payment_request_reject_reason_enum.dart';
 import '../../core/domain/entities/payment_ride_card_entity.dart';
@@ -48,13 +49,14 @@ extension XPayPaymentRequestMapper on XPayPaymentRequest {
     final violation = order.violation;
     if (violation != null) return Left(violation);
 
+    final method = PaymentMethod.fromRemote(model.paymentMethod);
     final rideCard = model._rideCard;
     final entryModes = (model.entryModes ?? const <String>[])
         .mapNotNull(PaymentEntryMode.fromRemote)
         .where((mode) => mode != PaymentEntryMode.rideCard || rideCard != null)
         .toSet()
         .toList();
-    if (entryModes.isEmpty) return const Left(PaymentRequestRejectReason.missingEntryModes);
+    if (entryModes.isEmpty && !method.isCorporateWallet) return const Left(PaymentRequestRejectReason.missingEntryModes);
 
     final enhancedData = template?.enhancedData;
     final trip = PaymentTripEntity(
@@ -62,7 +64,7 @@ extension XPayPaymentRequestMapper on XPayPaymentRequest {
       pickupLocation: enhancedData?.pickupLocation?.nullIfEmpty((value) => value.trim()),
       plateNumber: enhancedData?.plateNumber?.nullIfEmpty((value) => value.trim()),
     );
-    return Right(PaymentSessionEntity(entryModes: entryModes, order: order, rideCard: rideCard, trip: trip, sessionToken: sessionToken));
+    return Right(PaymentSessionEntity(entryModes: entryModes, order: order, rideCard: rideCard, trip: trip, method: method, sessionToken: sessionToken));
   }
 
   static const String _defaultCurrency = 'VND';

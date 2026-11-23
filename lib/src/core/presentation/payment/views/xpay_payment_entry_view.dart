@@ -1,24 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:remixicon/remixicon.dart';
 
 import '../../../../base/define/constant/constant.dart';
 import '../../../../base/localization/localization.dart';
 import '../../../../shared/helpers/helpers.dart';
 import '../../../../shared/views/views.dart';
 import '../../../../shared/widgets/widgets.dart';
-import '../../../domain/entities/payment_entry_mode_enum.dart';
 import '../../../domain/entities/payment_order_entity.dart';
-import '../../../domain/entities/payment_ride_card_entity.dart';
 import '../../../domain/entities/payment_session_entity.dart';
 
 final class XPayPaymentEntryView extends StatelessWidget {
-  const XPayPaymentEntryView({super.key, required this.entryModes, required this.session, required this.onBackPressed, required this.onSelected});
+  const XPayPaymentEntryView({super.key, required this.methods, required this.session, required this.onBackPressed});
 
-  final List<PaymentEntryMode> entryModes;
+  final Widget methods;
   final PaymentSessionEntity session;
   final void Function() onBackPressed;
-  final void Function(PaymentEntryMode entryMode) onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -58,21 +54,7 @@ final class XPayPaymentEntryView extends StatelessWidget {
                   title: viewLocale.entryTripTitle,
                   child: _XPayPaymentEntryTripWidget(rows: tripRows),
                 ),
-                _XPayPaymentEntrySectionWidget(
-                  title: viewLocale.entryMethodsTitle,
-                  child: Column(
-                    spacing: 12.0,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final entryMode in entryModes)
-                        _XPayPaymentEntryMethodWidget(
-                          rideCard: entryMode == PaymentEntryMode.rideCard ? session.rideCard : null,
-                          entryMode: entryMode,
-                          onTap: () => onSelected.call(entryMode),
-                        ),
-                    ],
-                  ),
-                ),
+                _XPayPaymentEntrySectionWidget(title: viewLocale.entryMethodsTitle, child: methods),
               ],
             ),
           ),
@@ -162,38 +144,6 @@ final class _XPayPaymentEntryTripWidget extends StatelessWidget {
       ],
     ),
   );
-}
-
-final class _XPayPaymentEntryMethodWidget extends StatelessWidget {
-  const _XPayPaymentEntryMethodWidget({this.rideCard, required this.entryMode, required this.onTap});
-
-  final PaymentRideCardEntity? rideCard;
-  final PaymentEntryMode entryMode;
-  final void Function() onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final locale = XPLocalization.instance.locale;
-
-    return XPListItemWidget.general(
-      leading: DecoratedBox(
-        decoration: const BoxDecoration(color: XPColorAction.primary, borderRadius: BorderRadius.all(Radius.circular(XPBorderRadius.rounded12))),
-        child: SizedBox.square(dimension: 48.0, child: Icon(entryMode.icon, size: 24.0, color: XPColorIcon.inversed)),
-      ),
-      trailing: const Icon(Remix.arrow_right_s_line, size: 24.0, color: XPColorIcon.primary),
-      borderColor: XPColorBorder.secondary,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      titleStyle: XPTextStyle.highlightMedium,
-      subtitle: entryMode.getMethodBody(locale, rideCard),
-      title: entryMode.getMethodTitle(locale, rideCard),
-      borderRadius: XPBorderRadius.rounded16,
-      borderWidth: 1.0,
-      contentGap: 0.0,
-      leadingGap: 12.0,
-      subtitleMaxLines: 2,
-      onTap: onTap,
-    );
-  }
 }
 
 @immutable

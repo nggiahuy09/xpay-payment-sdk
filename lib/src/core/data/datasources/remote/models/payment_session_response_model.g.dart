@@ -23,6 +23,7 @@ PaymentSessionResponseModel _$PaymentSessionResponseModelFromJson(
   amount: json['amount'] as String?,
   externalRef: json['external_ref'] as String?,
   orderId: json['order_id'] as String?,
+  paymentMethod: json['payment_method'] as String?,
   sessionToken: json['session_token'] as String?,
 );
 

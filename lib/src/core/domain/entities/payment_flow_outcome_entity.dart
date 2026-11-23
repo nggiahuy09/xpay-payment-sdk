@@ -38,10 +38,34 @@ final class PaymentFlowVerifiedOutcomeEntity extends PaymentFlowOutcomeEntity {
   List<Object?> get props => [result, entryMode, authId];
 }
 
-final class PaymentFlowExpiredOutcomeEntity extends PaymentFlowOutcomeEntity {
-  const PaymentFlowExpiredOutcomeEntity(this.authId);
+final class PaymentFlowWalletCapturedOutcomeEntity extends PaymentFlowOutcomeEntity {
+  const PaymentFlowWalletCapturedOutcomeEntity({this.createdAt, this.authId, this.currency, this.externalRef, this.amount});
 
-  final String authId;
+  final DateTime? createdAt;
+  final String? authId;
+  final String? currency;
+  final String? externalRef;
+  final String? amount;
+
+  @override
+  List<Object?> get props => [createdAt, authId, currency, externalRef, amount];
+}
+
+final class PaymentFlowWalletDeclinedOutcomeEntity extends PaymentFlowOutcomeEntity {
+  const PaymentFlowWalletDeclinedOutcomeEntity({this.currency, this.externalRef, this.amount});
+
+  final String? currency;
+  final String? externalRef;
+  final String? amount;
+
+  @override
+  List<Object?> get props => [currency, externalRef, amount];
+}
+
+final class PaymentFlowExpiredOutcomeEntity extends PaymentFlowOutcomeEntity {
+  const PaymentFlowExpiredOutcomeEntity([this.authId]);
+
+  final String? authId;
 
   @override
   List<Object?> get props => [authId];

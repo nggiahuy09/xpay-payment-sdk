@@ -4,7 +4,7 @@ part 'payment_session_response_model.g.dart';
 
 @JsonSerializable(createToJson: false)
 final class PaymentSessionResponseModel {
-  const PaymentSessionResponseModel({this.entryModes, this.paymentTemplate, this.rideCard, this.amount, this.externalRef, this.orderId, this.sessionToken});
+  const PaymentSessionResponseModel({this.entryModes, this.paymentTemplate, this.rideCard, this.amount, this.externalRef, this.orderId, this.paymentMethod, this.sessionToken});
 
   factory PaymentSessionResponseModel.fromJson(Map<String, dynamic> json) => _$PaymentSessionResponseModelFromJson(json);
 
@@ -19,6 +19,8 @@ final class PaymentSessionResponseModel {
   final String? externalRef;
   @JsonKey(name: 'order_id')
   final String? orderId;
+  @JsonKey(name: 'payment_method')
+  final String? paymentMethod;
   @JsonKey(name: 'session_token')
   final String? sessionToken;
 }

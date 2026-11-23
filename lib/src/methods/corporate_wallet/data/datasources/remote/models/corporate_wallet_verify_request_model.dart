@@ -1,0 +1,7 @@
+final class CorporateWalletVerifyRequestModel {
+  const CorporateWalletVerifyRequestModel(this.code);
+
+  final String code;
+
+  Map<String, dynamic> toJson() => {'code': code};
+}

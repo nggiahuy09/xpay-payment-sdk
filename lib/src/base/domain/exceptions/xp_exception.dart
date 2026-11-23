@@ -22,6 +22,9 @@ sealed class XPException with Equatable {
   /// Exposed as a getter rather than left to a type check so callers can branch on the meaning without importing the gateway's status codes, the same way [isNetworkError] works.
   bool get isConflict => false;
 
+  /// Whether the server refused the payment session itself (HTTP 401: expired, revoked or invalid), so no further request of this payment can succeed.
+  bool get isSessionRejected => false;
+
   @override
   List<Object?> get props => [details, error, displayMessage, displayTitle, errorCode, serverMessage];
 
@@ -57,6 +60,9 @@ final class XPUnauthorizedException extends XPException {
 
   const XPUnauthorizedException.tokenNotFound({super.error})
     : super(displayMessage: 'Your session is unavailable. Please sign in again.', displayTitle: 'Sign in required', errorCode: 'token_not_found');
+
+  @override
+  bool get isSessionRejected => true;
 }
 
 /// HTTP 409 — the request conflicts with one the server already holds.
@@ -76,6 +82,9 @@ final class XPApiException extends XPException {
 
   final Map<String, dynamic>? data;
   final int? statusCode;
+
+  @override
+  bool get isSessionRejected => statusCode == 401;
 
   @override
   List<Object?> get props => [...super.props, statusCode, data];

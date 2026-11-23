@@ -1,6 +1,6 @@
 # XPay Payment SDK for Flutter
 
-Collect a payment with an XPay card from your own Flutter app. The SDK owns the card part of the checkout: it shows the amount and the trip, lets the cashier pick how the card is presented, reads the card (NFC tap, QR scan, one-time code, manual entry, or the customer's linked card), authorizes the payment with XPay, runs the OTP or PIN verification when XPay asks for one, and hands your app a single result.
+Collect a payment with an XPay card from your own Flutter app. The SDK owns the card part of the checkout: it shows the amount and the trip, lets the cashier pick how the card is presented, reads the card (NFC tap, QR scan, one-time code, manual entry, or the customer's linked card), authorizes the payment with XPay, runs the OTP or PIN verification when XPay asks for one, and hands your app a single result. For a ride booked on the rider's corporate wallet, it collects from the wallet instead, by a QR code the rider scans in the XPERISE app or by a code sent to the rider's phone or email.
 
 Your app keeps everything around it: the order, the payment session, and what happens after the result.
 
@@ -46,6 +46,20 @@ Only the methods the device can run are listed. A `card_qr` choice accepts only 
 
 NFC is Android-only: XPay chip cards are MIFARE Classic, and iOS gives apps no access to MIFARE Classic cards.
 
+### Corporate wallet rides
+
+When the session's `payment_method` is `corporate_wallet`, the ride is paid from the rider's company wallet, and the same first screen lists these methods instead:
+
+| Method                                | What happens                                                                                                                                      | Android | iOS |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- |
+| Show QR code                          | The SDK shows a QR for the locked amount. The rider scans it with the XPERISE app and pays. The SDK checks every 3 seconds and returns once paid. | Yes     | Yes |
+| Send code by SMS / Send code by email | One row per rider and channel XPay has on file, the booker first. The SDK sends a 6-digit code; the cashier types the code the rider reads out.   | Yes     | Yes |
+
+1. Show QR code is always listed. The code rows come from XPay: a rider without a phone number gets no SMS row, without an email no email row. With no rider on file, only the QR is listed.
+2. On the code screen the cashier can resend the code, 40 seconds after the last send, and switch to another rider's phone number or email with **Change**.
+3. Backing out of the QR screen first cancels the QR with XPay. If XPay cannot confirm it, the SDK stays on the QR screen and says so, because the rider could still pay it; back out again to retry.
+4. A wrong code, an expired code or too many attempts are reported on the code screen and do not end the payment. Ask for a new code and continue.
+
 ## Requirements
 
 | Item    | Minimum               |
@@ -63,7 +77,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1120.1
+      ref: v3.1123.1
 ```
 
 To update, change `ref` to a newer tag and run `flutter pub get`. Read [CHANGELOG.md](CHANGELOG.md) first: the version number does not follow Semantic Versioning, so the changelog is where breaking changes are listed.
@@ -112,11 +126,11 @@ Each payment is authorized by a **ride payment session** that **your backend** o
 1. The cashier enters the fare of the ride in your app. Your app sends the `order_id` and the fare to your backend.
 2. Your backend calls `POST /merchant/rides/{order_id}/payment-session` with its `X-Merchant-Key`, which stays on the server, and a JSON body: `amount` (string, `fare` + `sub_fee`, in VND), `fare` (number), optional `sub_fee` (number, default 0) and `distance_km` (number).
 3. XPay answers a `session_token` for that one ride, with the `amount` it locked, the ride's `external_ref` (`XP-…`) and its trip data. The token is shown once and expires after 15 minutes.
-4. Your backend hands the **whole** response body to your app, without picking fields out of it, and your app passes that string as `sessionJson` to `XPayPaymentRequest.fromSession`. The SDK reads `session_token`, `amount`, `external_ref` and `payment_template` (`currency`, `product_type`) itself.
+4. Your backend hands the **whole** response body to your app, without picking fields out of it, and your app passes that string as `sessionJson` to `XPayPaymentRequest.fromSession`. The SDK reads `session_token`, `amount`, `external_ref`, `payment_method` and `payment_template` (`currency`, `product_type`) itself.
 
 The SDK sends the token in the `X-Ride-Payment` header of every request of that payment. It keeps the token in memory only while the payment is open, and never stores or logs it.
 
-The SDK does not refresh the token. When XPay rejects it, for example because the session expired, the payment ends with `failed` and an `errorCode` such as `token_expired`. Ask your backend for a new session and start the payment again.
+The SDK does not refresh the token. When XPay rejects it, for example because the session expired, the payment ends with `failed` and an `errorCode` such as `token_expired`. Ask your backend for a new session and start the payment again. On a corporate wallet ride, a session that expires while the SDK waits for the QR to be paid ends the payment with `expired`.
 
 **The amount is locked to the session.** The SDK collects exactly the `amount` of the session response. To collect another amount, open a new session; never edit the JSON before handing it to the SDK.
 
@@ -126,7 +140,7 @@ The SDK does not refresh the token. When XPay rejects it, for example because th
 
 **The reference comes from the session.** The SDK uses the response's `external_ref` (`XP-…`), so the result's `externalRef` is `XP-…` too.
 
-**An unreadable session is never paid.** A string that is not a JSON object, has no `session_token`, whose `amount` is not whole đồng (for example `"138000.50"`), or whose `entry_modes` hold no method the SDK knows makes `start` return `failed` with `sdk_invalid_request`, and nothing is sent to XPay. The exact reason reaches `onLog` as an `error` event with `feature` `payment`, `action` `start_payment` and a `reason` among `invalid_session_json`, `malformed_session`, `missing_session_token`, `missing_entry_modes`, `invalid_amount`, `amount_below_minimum`, `missing_currency`, `invalid_external_ref`; its `input` carries only `session_json_length`, never the JSON or its token.
+**An unreadable session is never paid.** A string that is not a JSON object, has no `session_token`, whose `amount` is not whole đồng (for example `"138000.50"`), or, for a card session, whose `entry_modes` hold no method the SDK knows makes `start` return `failed` with `sdk_invalid_request`, and nothing is sent to XPay. The exact reason reaches `onLog` as an `error` event with `feature` `payment`, `action` `start_payment` and a `reason` among `invalid_session_json`, `malformed_session`, `missing_session_token`, `missing_entry_modes`, `invalid_amount`, `amount_below_minimum`, `missing_currency`, `invalid_external_ref`; its `input` carries only `session_json_length`, never the JSON or its token.
 
 **Never put an XPay merchant key, API key or any other server credential in your app.**
 
@@ -169,7 +183,7 @@ Future<void> payWithXPay(BuildContext context, Order order) async {
   switch (result.status) {
     case XPayPaymentStatus.approved:
     case XPayPaymentStatus.captured:
-      await confirmOnBackend(order.id, result.authId);
+      await confirmOnBackend(order.id, externalRef: result.externalRef, authId: result.authId);
     case XPayPaymentStatus.declined:
     case XPayPaymentStatus.duplicate:
     case XPayPaymentStatus.failed:
@@ -189,15 +203,15 @@ Future<void> payWithXPay(BuildContext context, Order order) async {
 
 When none of the session's methods can run on the device (for example a session that allows only `chip_tap`, on iOS), `start` returns `unsupported` without opening anything.
 
-While XPay is authorizing the card, the back button is disabled, so the cashier cannot leave a payment that may already be charged.
+While XPay is authorizing the card or verifying a corporate wallet code, the back button is disabled, so the cashier cannot leave a payment that may already be charged.
 
 ## Request reference
 
 `XPayPaymentRequest`, built with `XPayPaymentRequest.fromSession(...)`:
 
-| Field         | Type     | Required | Notes                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sessionJson` | `String` | Yes      | The whole body of `POST /merchant/rides/{order_id}/payment-session`. The SDK takes `session_token`, `amount` (whole đồng, at least 1,000), `external_ref` (1 to 64 characters), `payment_template.currency` (`VND` by default), `payment_template.product_type`, `entry_modes`, `ride_card`, `order_id` and the trip in `payment_template.enhanced_data` from it. See [Authentication](#authentication). |
+| Field         | Type     | Required | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sessionJson` | `String` | Yes      | The whole body of `POST /merchant/rides/{order_id}/payment-session`. The SDK takes `session_token`, `amount` (whole đồng, at least 1,000), `external_ref` (1 to 64 characters), `payment_template.currency` (`VND` by default), `payment_template.product_type`, `payment_method` (`card` by default), `entry_modes`, `ride_card`, `order_id` and the trip in `payment_template.enhanced_data` from it. See [Authentication](#authentication). |
 
 A request that breaks these rules is rejected before anything is sent: `start` returns `failed` with `errorCode` `sdk_invalid_request`.
 
@@ -219,6 +233,16 @@ The card number, chip data and verification code are never part of the request. 
 | `unsupported` | None of the session's methods can run on this device.                        | none                                                                                        |
 
 `result.isSuccessful` is true for `approved` and `captured`.
+
+A corporate wallet payment ends differently, because no card payment is made:
+
+| Status      | Meaning for a wallet payment                                                              | Fields set                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `captured`  | The rider paid from the company wallet, at the QR or with the code.                       | `externalRef`, `amount`, `currency`; `createdAt` when paid at the QR. No `authId` |
+| `declined`  | XPay declined the payment made at the QR.                                                 | `message`                                                                         |
+| `expired`   | The QR expired, or the payment session expired while the SDK was waiting for the QR.      | none                                                                              |
+| `failed`    | The ride can no longer be paid from the wallet, XPay refused the payment session (`token_expired`, `ride_payment_session_revoked`), or XPay refused to report the QR payment. | `errorCode`, `message`                                                            |
+| `cancelled` | The cashier left before the rider paid. A QR on screen is cancelled with XPay first.      | none                                                                              |
 
 `message` is ready to show to the cashier, in the configured language. When XPay returned an error code with no copy of its own, the message ends with an `Error code:` line so support can trace it.
 
@@ -253,6 +277,16 @@ Codes from the authorization step that carry their own `message`, naming the cau
 | `ride_card_not_found`     | The ride is no longer assigned to the driver, or can no longer be paid.                                    | Check the ride on your side                   |
 | `ride_already_paid`       | The ride already has a payment.                                                                            | Check the ride status before collecting again |
 
+Codes that end a corporate wallet payment with `failed`, each with its own `message`:
+
+| Code                           | Cause                                                          | What to do                                    |
+| ------------------------------ | -------------------------------------------------------------- | --------------------------------------------- |
+| `amount_locked`                | XPay locked another fare for the ride after the code was sent. | Open a new session and start again            |
+| `ride_not_found`               | The ride is closed or no longer open for payment.              | Check the ride status before collecting again |
+| `ride_not_on_corporate_wallet` | The ride was not booked on the corporate wallet.               | Check the ride's payment method on your side  |
+
+Other wallet errors (wrong, expired or locked code, too many codes requested, a code that could not be delivered, a rider with no contact on file, the wallet refusing or being unavailable) are shown on the SDK screen and do not end the payment.
+
 ## Retries and duplicate payments
 
 Every authorization carries an idempotency key, so that a retried request is not charged twice.
@@ -266,15 +300,19 @@ A chip tap always produces a new key, because every tap carries a new cryptogram
 
 The session token is not part of the key. Retrying with a new session, after the previous one expired, still reuses the key. Opening a new session revokes the earlier ones (see [Authentication](#authentication)).
 
+A corporate wallet ride is paid at most once, by the QR or by a code: once paid, XPay closes the ride, and a later code request for it fails with `ride_not_found`. Check the ride with your backend before starting again after a `failed` or `cancelled` wallet result.
+
 ## Confirming a payment on your backend
 
 The result reaches the cashier's phone, which is not a trusted source. Before you fulfil the order, confirm the payment from your backend with XPay, using `authId` or your `externalRef`.
 
 Treat `cancelled` and `failed` results that carry an `authId` the same way. The payment was authorized and may still complete or expire on the XPay side.
 
+A corporate wallet payment has no `authId`: confirm it by `externalRef`.
+
 ## Logging
 
-Pass `onLog` to receive the SDK's business events, for example authorization outcomes, verification steps and NFC failures. Each `XPayLogEvent` has a `level`, a `category`, the `feature` and `action`, optional `reason`, `errorCode` and `serverMessage`, and an `input` map with the identifiers involved.
+Pass `onLog` to receive the SDK's business events, for example authorization outcomes, verification steps, NFC failures and corporate wallet steps (`feature` `corporate_wallet`). Each `XPayLogEvent` has a `level`, a `category`, the `feature` and `action`, optional `reason`, `errorCode` and `serverMessage`, and an `input` map with the identifiers involved.
 
 Events never contain a card number, chip key, cryptogram, nonce, verification code or token. NFC failure events do contain the chip's UID.
 
@@ -302,4 +340,5 @@ Use a real Android phone with NFC to try the chip tap.
 5. QR methods are listed without checking for a camera.
 6. Network failures (`no_connection`, `no_host`, `timeout`) and an expired session (`token_expired`) carry English `message` copy in both languages.
 7. Amounts are whole units, which suits VND. Other currencies have not been considered yet.
-8. On Android the SDK has no app bar of its own and is left only with the system back button. iOS has no system back button, so on iOS the method list shows a back button in the top left corner; it cancels the payment like the Android back button.
+8. The corporate wallet QR is checked every 3 seconds; a payment made at the QR is reported up to 3 seconds later.
+9. On Android the SDK has no app bar of its own and is left only with the system back button. iOS has no system back button, so on iOS the method list shows a back button in the top left corner; it cancels the payment like the Android back button.

@@ -61,8 +61,9 @@ abstract final class XPayPayment {
     _isRunning = true;
     _sessionTokenProvider.open(session.sessionToken);
     try {
-      final entryModes = await _resolveSupportedEntryModes(session.entryModes);
-      if (entryModes.isEmpty) return _resolve(const PaymentFlowUnsupportedOutcomeEntity());
+      final isCorporateWallet = session.method.isCorporateWallet;
+      final entryModes = isCorporateWallet ? session.entryModes : await _resolveSupportedEntryModes(session.entryModes);
+      if (entryModes.isEmpty && !isCorporateWallet) return _resolve(const PaymentFlowUnsupportedOutcomeEntity());
       if (context.mounted == false) return _resolve(const PaymentFlowCancelledOutcomeEntity());
 
       final route = MaterialPageRoute<PaymentFlowOutcomeEntity>(

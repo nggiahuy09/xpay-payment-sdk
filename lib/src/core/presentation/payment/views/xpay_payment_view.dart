@@ -22,6 +22,7 @@ import '../../verification/views/verification_page.dart';
 import '../../verification/widgets/verification_recipient_picker_sheet_widget.dart';
 import '../blocs/xpay_payment_bloc.dart';
 import '../helpers/payment_host_cancellation.dart';
+import '../widgets/xpay_payment_card_methods_widget.dart';
 import 'xpay_payment_entry_view.dart';
 
 final class XPayPaymentView extends StatefulWidget {
@@ -276,7 +277,11 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
               key: _navigatorKey,
               onGenerateInitialRoutes: (_, _) => [
                 MaterialPageRoute<void>(
-                  builder: (_) => XPayPaymentEntryView(entryModes: widget.entryModes, session: widget.session, onBackPressed: _handleBack, onSelected: _startCardEntry),
+                  builder: (_) => XPayPaymentEntryView(
+                    methods: XPayPaymentCardMethodsWidget(entryModes: widget.entryModes, rideCard: widget.session.rideCard, onSelected: _startCardEntry),
+                    session: widget.session,
+                    onBackPressed: _handleBack,
+                  ),
                 ),
               ],
             ),

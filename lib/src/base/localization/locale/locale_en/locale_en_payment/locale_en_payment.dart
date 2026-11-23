@@ -8,5 +8,7 @@ final class $XPLocaleENPayment implements $XPLocaleBasePayment {
   @override
   $XPLocaleBasePaymentVerification get verification => const $XPLocaleENPaymentVerification();
   @override
+  $XPLocaleBasePaymentWallet get wallet => const $XPLocaleENPaymentWallet();
+  @override
   $XPLocaleBasePaymentXpay get xpay => const $XPLocaleENPaymentXpay();
 }

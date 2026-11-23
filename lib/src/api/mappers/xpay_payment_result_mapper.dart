@@ -8,6 +8,21 @@ extension PaymentFlowOutcomeEntityMapper on PaymentFlowOutcomeEntity {
   XPayPaymentResult toResult(XPLocaleBase locale, {required bool canTapCard}) => switch (this) {
     final PaymentFlowAuthorizedOutcomeEntity outcome => outcome._toResult(locale, canTapCard),
     final PaymentFlowVerifiedOutcomeEntity outcome => outcome._toResult(locale, canTapCard),
+    final PaymentFlowWalletCapturedOutcomeEntity outcome => XPayPaymentResult(
+      status: XPayPaymentStatus.captured,
+      createdAt: outcome.createdAt,
+      authId: outcome.authId,
+      currency: outcome.currency,
+      externalRef: outcome.externalRef,
+      amount: outcome.amount._toAmount(),
+    ),
+    final PaymentFlowWalletDeclinedOutcomeEntity outcome => XPayPaymentResult(
+      status: XPayPaymentStatus.declined,
+      currency: outcome.currency,
+      externalRef: outcome.externalRef,
+      message: locale.payment.xpay.paymentDeclinedBody,
+      amount: outcome.amount._toAmount(),
+    ),
     final PaymentFlowExpiredOutcomeEntity outcome => XPayPaymentResult(status: XPayPaymentStatus.expired, authId: outcome.authId),
     final PaymentFlowCancelledOutcomeEntity outcome => XPayPaymentResult(status: XPayPaymentStatus.cancelled, authId: outcome.authId),
     PaymentFlowConflictOutcomeEntity _ => XPayPaymentResult(status: XPayPaymentStatus.duplicate, message: locale.payment.xpay.paymentDuplicateRequestBody),
