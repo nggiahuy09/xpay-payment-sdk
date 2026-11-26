@@ -10,7 +10,7 @@ class XPayPaymentContract : ActivityResultContract<XPayCheckout, XPayPaymentResu
 
     override fun getSynchronousResult(context: Context, input: XPayCheckout): ActivityResultContract.SynchronousResult<XPayPaymentResult>? {
         if (XPayPayment.isEngineCreated) return null
-        return ActivityResultContract.SynchronousResult(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.NOT_INITIALIZED))
+        return ActivityResultContract.SynchronousResult(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.NOT_INITIALIZED, failureCategory = XPayFailureCategory.SESSION))
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): XPayPaymentResult {

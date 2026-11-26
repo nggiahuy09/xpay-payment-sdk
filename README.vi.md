@@ -102,7 +102,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1123.1
+      ref: v3.1126.1
 ```
 
 Nâng cấp: đổi `ref` sang tag mới rồi chạy `flutter pub get`. Đọc [CHANGELOG.md](CHANGELOG.md) trước, vì số phiên bản không theo Semantic Versioning nên breaking change chỉ được ghi ở đó.
@@ -339,20 +339,21 @@ SDK không kiểm tra phiên còn hạn hay đã bị thu hồi. XPay kiểm tra
 
 ### `XPayPaymentResult`
 
-| Trường         | Kiểu                | Mô tả                                                                                                |
-| -------------- | ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `status`       | `XPayPaymentStatus` | Trạng thái cuối cùng, luôn có                                                                        |
-| `authId`       | `String?`           | Mã authorize của XPay. Dùng để đối soát với backend. Luôn `null` với thanh toán bằng ví doanh nghiệp |
-| `captureId`    | `String?`           | Mã capture, chỉ có khi `captured`                                                                    |
-| `bookingRef`   | `String?`           | Mã booking, có khi thanh toán thành công sau bước xác thực                                           |
-| `externalRef`  | `String?`           | Mã tham chiếu của đối tác, do XPay trả về                                                            |
-| `amount`       | `int?`              | Số tiền XPay ghi nhận                                                                                |
-| `currency`     | `String?`           | Mã tiền tệ XPay ghi nhận                                                                             |
-| `createdAt`    | `DateTime?`         | Thời điểm XPay tạo giao dịch                                                                         |
-| `declineCode`  | `String?`           | Mã từ chối thô từ XPay, khi `declined`                                                               |
-| `errorCode`    | `String?`           | Mã lỗi, khi `failed`. Xem [mục 10](#10-mã-lỗi)                                                       |
-| `message`      | `String?`           | Câu thông báo sẵn sàng hiển thị cho nhân viên, theo ngôn ngữ đã cấu hình                             |
-| `isSuccessful` | `bool` (getter)     | `true` khi `status` là `approved` hoặc `captured`                                                    |
+| Trường            | Kiểu                   | Mô tả                                                                                                |
+| ----------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `status`          | `XPayPaymentStatus`    | Trạng thái cuối cùng, luôn có                                                                        |
+| `failureCategory` | `XPayFailureCategory?` | Nhóm lỗi khi `declined`, `failed` hoặc `duplicate`. Xem [mục 9](#9-kết-quả-và-cách-xử-lý)            |
+| `authId`          | `String?`              | Mã authorize của XPay. Dùng để đối soát với backend. Luôn `null` với thanh toán bằng ví doanh nghiệp |
+| `captureId`       | `String?`              | Mã capture, chỉ có khi `captured`                                                                    |
+| `bookingRef`      | `String?`              | Mã booking, có khi thanh toán thành công sau bước xác thực                                           |
+| `externalRef`     | `String?`              | Mã tham chiếu của đối tác, do XPay trả về                                                            |
+| `amount`          | `int?`                 | Số tiền XPay ghi nhận                                                                                |
+| `currency`        | `String?`              | Mã tiền tệ XPay ghi nhận                                                                             |
+| `createdAt`       | `DateTime?`            | Thời điểm XPay tạo giao dịch                                                                         |
+| `declineCode`     | `String?`              | Mã từ chối thô từ XPay, khi `declined`                                                               |
+| `errorCode`       | `String?`              | Mã lỗi, khi `failed`. Xem [mục 10](#10-mã-lỗi)                                                       |
+| `message`         | `String?`              | Câu thông báo sẵn sàng hiển thị cho nhân viên, theo ngôn ngữ đã cấu hình                             |
+| `isSuccessful`    | `bool` (getter)        | `true` khi `status` là `approved` hoặc `captured`                                                    |
 
 ### `XPayPaymentStatus`
 
@@ -399,13 +400,29 @@ Về `approved` và `captured`: với thẻ (chạm NFC, quét QR in trên thẻ
 
 Thanh toán bằng ví doanh nghiệp không tạo giao dịch thẻ, nên kết quả khác bảng trên:
 
-| Trạng thái  | Ý nghĩa với thanh toán ví                                                              | Trường có giá trị                                                                      | App nên làm gì                                             |
-| ----------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `captured`  | Khách đã trả bằng ví doanh nghiệp, qua mã QR hoặc qua mã gửi tới khách                 | `externalRef`, `amount`, `currency`; `createdAt` nếu trả qua QR. **Không có `authId`** | Coi là thành công, xác nhận với backend bằng `externalRef` |
-| `declined`  | XPay từ chối khoản thanh toán qua mã QR                                                | `message`                                                                              | Hiển thị `message`                                         |
-| `expired`   | Mã QR hết hạn, hoặc phiên thu tiền hết hạn khi SDK đang chờ khách quét QR              | Không có                                                                               | Xin phiên mới rồi thanh toán lại                           |
+| Trạng thái  | Ý nghĩa với thanh toán ví                                                                                                                                           | Trường có giá trị                                                                      | App nên làm gì                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `captured`  | Khách đã trả bằng ví doanh nghiệp, qua mã QR hoặc qua mã gửi tới khách                                                                                              | `externalRef`, `amount`, `currency`; `createdAt` nếu trả qua QR. **Không có `authId`** | Coi là thành công, xác nhận với backend bằng `externalRef` |
+| `declined`  | XPay từ chối khoản thanh toán qua mã QR                                                                                                                             | `message`                                                                              | Hiển thị `message`                                         |
+| `expired`   | Mã QR hết hạn, hoặc phiên thu tiền hết hạn khi SDK đang chờ khách quét QR                                                                                           | Không có                                                                               | Xin phiên mới rồi thanh toán lại                           |
 | `failed`    | Chuyến không còn thanh toán được bằng ví, XPay từ chối phiên thu tiền (`token_expired`, `ride_payment_session_revoked`), hoặc XPay từ chối trả trạng thái của mã QR | `errorCode`, `message`                                                                 | Hiển thị `message`, kiểm tra chuyến với backend            |
-| `cancelled` | Nhân viên thoát trước khi khách trả. Mã QR đang hiện được huỷ với XPay trước khi thoát | Không có                                                                               | Kiểm tra chuyến với backend trước khi thu bằng cách khác   |
+| `cancelled` | Nhân viên thoát trước khi khách trả. Mã QR đang hiện được huỷ với XPay trước khi thoát                                                                              | Không có                                                                               | Kiểm tra chuyến với backend trước khi thu bằng cách khác   |
+
+### Nhóm lỗi
+
+`failureCategory` cho biết mỗi kết quả `declined`, `failed` hoặc `duplicate` thuộc nhóm lỗi nào, để app xử lý theo nhóm thay vì đọc từng mã. Với các trạng thái còn lại, trường này là `null`.
+
+| Nhóm               | Phía gây ra                                  | Cách xử lý                                                                                           |
+| ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `system`           | XPay, SDK hoặc cấu hình merchant             | Thử lại. Nếu vẫn lỗi, không thu tiền mặt: tài xế liên hệ tổng đài XPay để được thanh toán hộ         |
+| `network`          | Kết nối mạng của thiết bị tài xế             | Khôi phục kết nối rồi thử lại. Không thu tiền mặt: nếu vẫn lỗi, tài xế liên hệ tổng đài XPay         |
+| `cardholderRetry`  | Khách quét, chạm hoặc nhập thẻ chưa đúng     | Cho khách thử lại cùng thẻ. Nếu vẫn lỗi, xử lý như `cardholderChange`                                |
+| `cardholderChange` | Thẻ không dùng được cho giao dịch            | Khách dùng thẻ hoặc phương thức khác, hoặc liên hệ tổng đài XPay                                     |
+| `corporatePolicy`  | Quy định của doanh nghiệp sở hữu thẻ hoặc ví | Tổng đài XPay làm việc với doanh nghiệp. Nếu doanh nghiệp không điều chỉnh, khách trả bằng cách khác |
+| `session`          | Phiên thanh toán, chuyến đi hoặc tích hợp    | Không thu bằng cách khác trước khi kiểm tra chuyến và giao dịch trên backend                         |
+| `unknown`          | Chưa phân loại                               | Xử lý như `system`                                                                                   |
+
+Danh sách mã theo từng nhóm và quy định xử lý chi tiết: [docs/failure_categories.vi.md](docs/failure_categories.vi.md).
 
 Về `message`:
 
@@ -530,7 +547,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `corporate_wallet` | `intent_captured`                                        | `info`  | Khách đã trả qua mã QR                                                                                                                                                                                                                                        | `intent_id`                                                                                        |
 | `corporate_wallet` | `intent_ended`                                           | `warn`  | Mã QR kết thúc mà không được trả. `reason`: `declined`, `canceled`, `expired`                                                                                                                                                                                 | `intent_id`                                                                                        |
 
-Danh sách này phản ánh phiên bản `3.1123.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
+Danh sách này phản ánh phiên bản `3.1126.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
 
@@ -564,7 +581,7 @@ Hành vi chung:
 6. HTTP 422 `amount_locked` ở bước authorize: kết quả là `failed` với `errorCode = amount_locked`.
 7. Khi kiểm tra mã QR: lỗi mạng và HTTP 5xx thì SDK kiểm tra lại sau 3 giây; HTTP 401 `session_expired` cho kết quả `expired`; các lỗi 4xx khác cho kết quả `failed`.
 
-Đây là thông tin tham khảo của phiên bản `3.1123.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
+Đây là thông tin tham khảo của phiên bản `3.1126.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
 
 ## 15. Bảo mật
 

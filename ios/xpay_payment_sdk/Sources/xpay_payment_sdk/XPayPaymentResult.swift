@@ -13,6 +13,7 @@ public struct XPayPaymentResult: Equatable {
     public let message: String?
     public let amount: Int64?
     public let createdAt: Date?
+    public let failureCategory: XPayFailureCategory?
 
     public init(
         status: XPayPaymentStatus,
@@ -25,7 +26,8 @@ public struct XPayPaymentResult: Equatable {
         externalRef: String? = nil,
         message: String? = nil,
         amount: Int64? = nil,
-        createdAt: Date? = nil
+        createdAt: Date? = nil,
+        failureCategory: XPayFailureCategory? = nil
     ) {
         self.status = status
         self.authId = authId
@@ -38,6 +40,7 @@ public struct XPayPaymentResult: Equatable {
         self.message = message
         self.amount = amount
         self.createdAt = createdAt
+        self.failureCategory = failureCategory
     }
 
     /// `true` when `status` is `approved` or `captured`.
@@ -64,4 +67,14 @@ public enum XPayPaymentStatus: String {
     case failed
     case expired
     case unsupported
+}
+
+public enum XPayFailureCategory: String {
+    case system
+    case network
+    case cardholderRetry
+    case cardholderChange
+    case corporatePolicy
+    case session
+    case unknown
 }

@@ -25,7 +25,8 @@ extension XPayEmbeddedResultMessage {
             externalRef: externalRef,
             message: message,
             amount: amount,
-            createdAt: createdAtEpochMillis.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000.0) }
+            createdAt: createdAtEpochMillis.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000.0) },
+            failureCategory: failureCategory?.toCategory()
         )
     }
 }
@@ -65,6 +66,20 @@ private extension XPayEmbeddedPaymentStatus {
         case .failed: return .failed
         case .expired: return .expired
         case .unsupported: return .unsupported
+        }
+    }
+}
+
+private extension XPayEmbeddedFailureCategory {
+    func toCategory() -> XPayFailureCategory {
+        switch self {
+        case .system: return .system
+        case .network: return .network
+        case .cardholderRetry: return .cardholderRetry
+        case .cardholderChange: return .cardholderChange
+        case .corporatePolicy: return .corporatePolicy
+        case .session: return .session
+        case .unknown: return .unknown
         }
     }
 }

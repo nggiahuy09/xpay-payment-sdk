@@ -17,6 +17,7 @@ extension XPayEmbeddedRequestMessageMapper on XPayEmbeddedRequestMessage {
 
 extension XPayPaymentResultMessageMapper on XPayPaymentResult {
   XPayEmbeddedResultMessage toMessage() => XPayEmbeddedResultMessage(
+    failureCategory: failureCategory?._toMessage(),
     status: status._toMessage(),
     authId: authId,
     bookingRef: bookingRef,
@@ -54,6 +55,18 @@ extension on XPayPaymentStatus {
     XPayPaymentStatus.failed => XPayEmbeddedPaymentStatus.failed,
     XPayPaymentStatus.expired => XPayEmbeddedPaymentStatus.expired,
     XPayPaymentStatus.unsupported => XPayEmbeddedPaymentStatus.unsupported,
+  };
+}
+
+extension on XPayFailureCategory {
+  XPayEmbeddedFailureCategory _toMessage() => switch (this) {
+    XPayFailureCategory.system => XPayEmbeddedFailureCategory.system,
+    XPayFailureCategory.network => XPayEmbeddedFailureCategory.network,
+    XPayFailureCategory.cardholderRetry => XPayEmbeddedFailureCategory.cardholderRetry,
+    XPayFailureCategory.cardholderChange => XPayEmbeddedFailureCategory.cardholderChange,
+    XPayFailureCategory.corporatePolicy => XPayEmbeddedFailureCategory.corporatePolicy,
+    XPayFailureCategory.session => XPayEmbeddedFailureCategory.session,
+    XPayFailureCategory.unknown => XPayEmbeddedFailureCategory.unknown,
   };
 }
 

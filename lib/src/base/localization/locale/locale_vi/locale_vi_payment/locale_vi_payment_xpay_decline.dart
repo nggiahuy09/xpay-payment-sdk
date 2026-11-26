@@ -45,7 +45,8 @@ final class $XPLocaleVIPaymentXpayDecline implements $XPLocaleBasePaymentXpayDec
   }
 
   @override
-  String get velocityLimitExceeded => 'Quá nhiều giao dịch được tạo cho thẻ này trong thời gian ngắn. Vui lòng thử lại sau 5 phút.';
+  String get velocityLimitExceeded =>
+      'Thẻ đã bị khoá do có quá nhiều giao dịch trong thời gian ngắn. Vui lòng dùng thẻ hoặc phương thức thanh toán khác, hoặc liên hệ bộ phận hỗ trợ.';
   @override
   String get tokenInvalidOrExpired => 'Mã thanh toán không hợp lệ hoặc đã hết hạn. Vui lòng quét lại.';
   @override

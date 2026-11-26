@@ -45,7 +45,7 @@ final class $XPLocaleENPaymentXpayDecline implements $XPLocaleBasePaymentXpayDec
   }
 
   @override
-  String get velocityLimitExceeded => 'Too many payments have been created for this card in a short time. Please try again in 5 minutes.';
+  String get velocityLimitExceeded => 'This card has been locked due to too many payments in a short time. Please use another card or payment method, or contact support.';
   @override
   String get tokenInvalidOrExpired => 'The payment code is invalid or has expired. Please scan again.';
   @override

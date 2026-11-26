@@ -195,6 +195,24 @@ class XPayEmbeddedError (
   val details: Any? = null
 ) : RuntimeException()
 
+enum class XPayEmbeddedFailureCategory(val raw: Int) {
+  SYSTEM(0),
+  NETWORK(1),
+  CARDHOLDER_RETRY(2),
+  CARDHOLDER_CHANGE(3),
+  CORPORATE_POLICY(4),
+  SESSION(5),
+  UNKNOWN(6);
+
+  companion object {
+    private val pigeonValues = values()
+
+    fun ofRaw(raw: Int): XPayEmbeddedFailureCategory? {
+      return pigeonValues.getOrNull(raw)
+    }
+  }
+}
+
 enum class XPayEmbeddedLanguage(val raw: Int) {
   EN(0),
   VI(1);
@@ -335,6 +353,7 @@ data class XPayEmbeddedRequestMessage (
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class XPayEmbeddedResultMessage (
+  val failureCategory: XPayEmbeddedFailureCategory? = null,
   val status: XPayEmbeddedPaymentStatus,
   val authId: String? = null,
   val bookingRef: String? = null,
@@ -350,22 +369,24 @@ data class XPayEmbeddedResultMessage (
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): XPayEmbeddedResultMessage {
-      val status = pigeonVar_list[0] as XPayEmbeddedPaymentStatus
-      val authId = pigeonVar_list[1] as String?
-      val bookingRef = pigeonVar_list[2] as String?
-      val captureId = pigeonVar_list[3] as String?
-      val currency = pigeonVar_list[4] as String?
-      val declineCode = pigeonVar_list[5] as String?
-      val errorCode = pigeonVar_list[6] as String?
-      val externalRef = pigeonVar_list[7] as String?
-      val message = pigeonVar_list[8] as String?
-      val amount = pigeonVar_list[9] as Long?
-      val createdAtEpochMillis = pigeonVar_list[10] as Long?
-      return XPayEmbeddedResultMessage(status, authId, bookingRef, captureId, currency, declineCode, errorCode, externalRef, message, amount, createdAtEpochMillis)
+      val failureCategory = pigeonVar_list[0] as XPayEmbeddedFailureCategory?
+      val status = pigeonVar_list[1] as XPayEmbeddedPaymentStatus
+      val authId = pigeonVar_list[2] as String?
+      val bookingRef = pigeonVar_list[3] as String?
+      val captureId = pigeonVar_list[4] as String?
+      val currency = pigeonVar_list[5] as String?
+      val declineCode = pigeonVar_list[6] as String?
+      val errorCode = pigeonVar_list[7] as String?
+      val externalRef = pigeonVar_list[8] as String?
+      val message = pigeonVar_list[9] as String?
+      val amount = pigeonVar_list[10] as Long?
+      val createdAtEpochMillis = pigeonVar_list[11] as Long?
+      return XPayEmbeddedResultMessage(failureCategory, status, authId, bookingRef, captureId, currency, declineCode, errorCode, externalRef, message, amount, createdAtEpochMillis)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
+      failureCategory,
       status,
       authId,
       bookingRef,
@@ -387,11 +408,12 @@ data class XPayEmbeddedResultMessage (
       return true
     }
     val other = other as XPayEmbeddedResultMessage
-    return XPayEmbeddedApiPigeonUtils.deepEquals(this.status, other.status) && XPayEmbeddedApiPigeonUtils.deepEquals(this.authId, other.authId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.bookingRef, other.bookingRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.captureId, other.captureId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.currency, other.currency) && XPayEmbeddedApiPigeonUtils.deepEquals(this.declineCode, other.declineCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.errorCode, other.errorCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.externalRef, other.externalRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.message, other.message) && XPayEmbeddedApiPigeonUtils.deepEquals(this.amount, other.amount) && XPayEmbeddedApiPigeonUtils.deepEquals(this.createdAtEpochMillis, other.createdAtEpochMillis)
+    return XPayEmbeddedApiPigeonUtils.deepEquals(this.failureCategory, other.failureCategory) && XPayEmbeddedApiPigeonUtils.deepEquals(this.status, other.status) && XPayEmbeddedApiPigeonUtils.deepEquals(this.authId, other.authId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.bookingRef, other.bookingRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.captureId, other.captureId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.currency, other.currency) && XPayEmbeddedApiPigeonUtils.deepEquals(this.declineCode, other.declineCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.errorCode, other.errorCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.externalRef, other.externalRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.message, other.message) && XPayEmbeddedApiPigeonUtils.deepEquals(this.amount, other.amount) && XPayEmbeddedApiPigeonUtils.deepEquals(this.createdAtEpochMillis, other.createdAtEpochMillis)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.failureCategory)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.status)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.authId)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.bookingRef)
@@ -406,7 +428,7 @@ data class XPayEmbeddedResultMessage (
     return result
   }
   override fun toString(): String {
-    return "XPayEmbeddedResultMessage(status=$status, authId=$authId, bookingRef=$bookingRef, captureId=$captureId, currency=$currency, declineCode=$declineCode, errorCode=$errorCode, externalRef=$externalRef, message=$message, amount=$amount, createdAtEpochMillis=$createdAtEpochMillis)"
+    return "XPayEmbeddedResultMessage(failureCategory=$failureCategory, status=$status, authId=$authId, bookingRef=$bookingRef, captureId=$captureId, currency=$currency, declineCode=$declineCode, errorCode=$errorCode, externalRef=$externalRef, message=$message, amount=$amount, createdAtEpochMillis=$createdAtEpochMillis)"
   }
 }
 
@@ -479,40 +501,45 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
     return when (type) {
       129.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedLanguage.ofRaw(it.toInt())
+          XPayEmbeddedFailureCategory.ofRaw(it.toInt())
         }
       }
       130.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedLogCategory.ofRaw(it.toInt())
+          XPayEmbeddedLanguage.ofRaw(it.toInt())
         }
       }
       131.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedLogLevel.ofRaw(it.toInt())
+          XPayEmbeddedLogCategory.ofRaw(it.toInt())
         }
       }
       132.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedPaymentStatus.ofRaw(it.toInt())
+          XPayEmbeddedLogLevel.ofRaw(it.toInt())
         }
       }
       133.toByte() -> {
-        (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedConfigMessage.fromList(it)
+        (readValue(buffer) as Long?)?.let {
+          XPayEmbeddedPaymentStatus.ofRaw(it.toInt())
         }
       }
       134.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedRequestMessage.fromList(it)
+          XPayEmbeddedConfigMessage.fromList(it)
         }
       }
       135.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedResultMessage.fromList(it)
+          XPayEmbeddedRequestMessage.fromList(it)
         }
       }
       136.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          XPayEmbeddedResultMessage.fromList(it)
+        }
+      }
+      137.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
           XPayEmbeddedLogMessage.fromList(it)
         }
@@ -522,36 +549,40 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is XPayEmbeddedLanguage -> {
+      is XPayEmbeddedFailureCategory -> {
         stream.write(129)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedLogCategory -> {
+      is XPayEmbeddedLanguage -> {
         stream.write(130)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedLogLevel -> {
+      is XPayEmbeddedLogCategory -> {
         stream.write(131)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedPaymentStatus -> {
+      is XPayEmbeddedLogLevel -> {
         stream.write(132)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedConfigMessage -> {
+      is XPayEmbeddedPaymentStatus -> {
         stream.write(133)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedRequestMessage -> {
+      is XPayEmbeddedConfigMessage -> {
         stream.write(134)
         writeValue(stream, value.toList())
       }
-      is XPayEmbeddedResultMessage -> {
+      is XPayEmbeddedRequestMessage -> {
         stream.write(135)
         writeValue(stream, value.toList())
       }
-      is XPayEmbeddedLogMessage -> {
+      is XPayEmbeddedResultMessage -> {
         stream.write(136)
+        writeValue(stream, value.toList())
+      }
+      is XPayEmbeddedLogMessage -> {
+        stream.write(137)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

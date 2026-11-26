@@ -40,11 +40,11 @@ object XPayPayment {
     }
 
     internal fun startPayment(checkout: XPayCheckout, callback: (XPayPaymentResult) -> Unit) {
-        val flutterApi = flutterApi ?: return callback(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.NOT_INITIALIZED))
+        val flutterApi = flutterApi ?: return callback(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.NOT_INITIALIZED, failureCategory = XPayFailureCategory.SESSION))
         flutterApi.start(checkout.toMessage()) { result ->
             val paymentResult = result.fold(
                 onSuccess = { message -> message.toResult() },
-                onFailure = { XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.UNEXPECTED_RESPONSE) },
+                onFailure = { XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.UNEXPECTED_RESPONSE, failureCategory = XPayFailureCategory.SESSION) },
             )
             callback(paymentResult)
         }

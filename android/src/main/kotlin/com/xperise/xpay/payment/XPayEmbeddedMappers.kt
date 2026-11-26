@@ -18,6 +18,7 @@ internal fun XPayEmbeddedResultMessage.toResult(): XPayPaymentResult = XPayPayme
     message = message,
     amount = amount,
     createdAt = createdAtEpochMillis?.let(::Date),
+    failureCategory = failureCategory?.toCategory(),
 )
 
 internal fun XPayEmbeddedLogMessage.toLogEvent(): XPayLogEvent = XPayLogEvent(
@@ -45,6 +46,16 @@ private fun XPayEmbeddedPaymentStatus.toStatus(): XPayPaymentStatus = when (this
     XPayEmbeddedPaymentStatus.FAILED -> XPayPaymentStatus.FAILED
     XPayEmbeddedPaymentStatus.EXPIRED -> XPayPaymentStatus.EXPIRED
     XPayEmbeddedPaymentStatus.UNSUPPORTED -> XPayPaymentStatus.UNSUPPORTED
+}
+
+private fun XPayEmbeddedFailureCategory.toCategory(): XPayFailureCategory = when (this) {
+    XPayEmbeddedFailureCategory.SYSTEM -> XPayFailureCategory.SYSTEM
+    XPayEmbeddedFailureCategory.NETWORK -> XPayFailureCategory.NETWORK
+    XPayEmbeddedFailureCategory.CARDHOLDER_RETRY -> XPayFailureCategory.CARDHOLDER_RETRY
+    XPayEmbeddedFailureCategory.CARDHOLDER_CHANGE -> XPayFailureCategory.CARDHOLDER_CHANGE
+    XPayEmbeddedFailureCategory.CORPORATE_POLICY -> XPayFailureCategory.CORPORATE_POLICY
+    XPayEmbeddedFailureCategory.SESSION -> XPayFailureCategory.SESSION
+    XPayEmbeddedFailureCategory.UNKNOWN -> XPayFailureCategory.UNKNOWN
 }
 
 private fun XPayEmbeddedLogCategory.toCategory(): XPayLogCategory = when (this) {

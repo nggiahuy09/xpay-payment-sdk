@@ -1,5 +1,6 @@
 final class XPayPaymentResult {
   const XPayPaymentResult({
+    this.failureCategory,
     required this.status,
     this.createdAt,
     this.authId,
@@ -13,6 +14,7 @@ final class XPayPaymentResult {
     this.amount,
   });
 
+  final XPayFailureCategory? failureCategory;
   final XPayPaymentStatus status;
   final DateTime? createdAt;
   final String? authId;
@@ -29,7 +31,7 @@ final class XPayPaymentResult {
 
   @override
   String toString() =>
-      'XPayPaymentResult(status: ${status.name}, authId: $authId, captureId: $captureId, externalRef: $externalRef, amount: $amount, currency: $currency, createdAt: $createdAt, '
+      'XPayPaymentResult(status: ${status.name}, failureCategory: ${failureCategory?.name}, authId: $authId, captureId: $captureId, externalRef: $externalRef, amount: $amount, currency: $currency, createdAt: $createdAt, '
       'bookingRef: $bookingRef, declineCode: $declineCode, errorCode: $errorCode, message: $message)';
 }
 
@@ -49,4 +51,14 @@ enum XPayPaymentStatus {
   failed,
   expired,
   unsupported,
+}
+
+enum XPayFailureCategory {
+  system,
+  network,
+  cardholderRetry,
+  cardholderChange,
+  corporatePolicy,
+  session,
+  unknown,
 }

@@ -25,6 +25,7 @@ class XPayEmbeddedRequestMessage {
 
 class XPayEmbeddedResultMessage {
   XPayEmbeddedResultMessage({
+    this.failureCategory,
     required this.status,
     this.authId,
     this.bookingRef,
@@ -38,6 +39,7 @@ class XPayEmbeddedResultMessage {
     this.createdAtEpochMillis,
   });
 
+  XPayEmbeddedFailureCategory? failureCategory;
   XPayEmbeddedPaymentStatus status;
   String? authId;
   String? bookingRef;
@@ -89,6 +91,8 @@ abstract class XPayEmbeddedFlutterApi {
 abstract class XPayEmbeddedHostApi {
   void onLog(XPayEmbeddedLogMessage event);
 }
+
+enum XPayEmbeddedFailureCategory { system, network, cardholderRetry, cardholderChange, corporatePolicy, session, unknown }
 
 enum XPayEmbeddedLanguage { en, vi }
 

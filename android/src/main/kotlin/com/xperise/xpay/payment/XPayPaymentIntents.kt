@@ -13,6 +13,7 @@ internal object XPayPaymentIntents {
     private const val KEY_DECLINE_CODE = "com.xperise.xpay.payment.decline_code"
     private const val KEY_ERROR_CODE = "com.xperise.xpay.payment.error_code"
     private const val KEY_EXTERNAL_REF = "com.xperise.xpay.payment.external_ref"
+    private const val KEY_FAILURE_CATEGORY = "com.xperise.xpay.payment.failure_category"
     private const val KEY_MESSAGE = "com.xperise.xpay.payment.message"
     private const val KEY_SESSION_JSON = "com.xperise.xpay.payment.session_json"
     private const val KEY_STATUS = "com.xperise.xpay.payment.status"
@@ -38,11 +39,13 @@ internal object XPayPaymentIntents {
         putExtra(KEY_MESSAGE, result.message)
         result.amount?.let { putExtra(KEY_AMOUNT, it) }
         result.createdAt?.let { putExtra(KEY_CREATED_AT, it.time) }
+        result.failureCategory?.let { putExtra(KEY_FAILURE_CATEGORY, it.name) }
     }
 
     fun readResult(intent: Intent): XPayPaymentResult? {
         val statusName = intent.getStringExtra(KEY_STATUS)
         val status = XPayPaymentStatus.entries.firstOrNull { it.name == statusName } ?: return null
+        val failureCategoryName = intent.getStringExtra(KEY_FAILURE_CATEGORY)
         return XPayPaymentResult(
             status = status,
             authId = intent.getStringExtra(KEY_AUTH_ID),
@@ -55,6 +58,7 @@ internal object XPayPaymentIntents {
             message = intent.getStringExtra(KEY_MESSAGE),
             amount = if (intent.hasExtra(KEY_AMOUNT)) intent.getLongExtra(KEY_AMOUNT, 0L) else null,
             createdAt = if (intent.hasExtra(KEY_CREATED_AT)) Date(intent.getLongExtra(KEY_CREATED_AT, 0L)) else null,
+            failureCategory = XPayFailureCategory.entries.firstOrNull { it.name == failureCategoryName },
         )
     }
 }

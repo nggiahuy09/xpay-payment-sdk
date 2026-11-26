@@ -14,6 +14,7 @@ data class XPayPaymentResult(
     val message: String? = null,
     val amount: Long? = null,
     val createdAt: Date? = null,
+    val failureCategory: XPayFailureCategory? = null,
 ) {
     val isSuccessful: Boolean
         get() = status == XPayPaymentStatus.APPROVED || status == XPayPaymentStatus.CAPTURED
@@ -28,3 +29,5 @@ object XPayErrorCode {
 }
 
 enum class XPayPaymentStatus { APPROVED, CAPTURED, DECLINED, CANCELLED, DUPLICATE, FAILED, EXPIRED, UNSUPPORTED }
+
+enum class XPayFailureCategory { SYSTEM, NETWORK, CARDHOLDER_RETRY, CARDHOLDER_CHANGE, CORPORATE_POLICY, SESSION, UNKNOWN }

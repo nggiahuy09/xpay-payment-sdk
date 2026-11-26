@@ -4,6 +4,21 @@ All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the v
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.1126.1
+
+Adds a failure category to every unsuccessful result. No public type, field or method is renamed or removed.
+
+### Added
+
+1. `XPayPaymentResult.failureCategory` (`XPayFailureCategory?`) groups every `declined`, `failed` and `duplicate` result: `system`, `network`, `cardholderRetry`, `cardholderChange`,
+   `corporatePolicy`, `session` and `unknown` (`SYSTEM`, `NETWORK`, … on Android). It is `null` for the other statuses. See "Failure category" in the README, and
+   `docs/failure_categories.vi.md` for the codes in each category and how to handle them.
+2. On iOS, `XPayFailureCategory` is a non-frozen enum: add an `@unknown default` branch when you switch over it.
+
+### Changed
+
+1. `declined` with `declineCode` `velocity_limit_exceeded` now says the card is locked and asks for another card or payment method, instead of asking to try again in 5 minutes.
+
 ## 3.1123.1
 
 Adds payment from the rider's corporate wallet. No public type, field or method is renamed or removed, but a wallet payment succeeds without an `authId`: see **Breaking** below.

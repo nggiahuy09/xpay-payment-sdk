@@ -181,4 +181,131 @@ void main() {
       expect(result.message, isNull);
     });
   });
+
+  group('failure category', () {
+    test('successful and neutral outcomes carry no category', () {
+      expect(_map(_authorized(const PaymentAuthorizeEntity(status: PaymentAuthorizeStatus.captured))).failureCategory, isNull);
+      expect(_map(const PaymentFlowWalletCapturedOutcomeEntity()).failureCategory, isNull);
+      expect(_map(const PaymentFlowCancelledOutcomeEntity()).failureCategory, isNull);
+      expect(_map(const PaymentFlowExpiredOutcomeEntity()).failureCategory, isNull);
+      expect(_map(const PaymentFlowUnsupportedOutcomeEntity()).failureCategory, isNull);
+    });
+
+    test('a decline is grouped by its reason', () {
+      for (final MapEntry(key: code, value: category) in _declineCategories.entries) {
+        expect(_map(_declined(code)).failureCategory, category, reason: code);
+      }
+    });
+
+    test('a verification decline is grouped by its reason', () {
+      final result = _map(
+        _verified(
+          PaymentVerifyEntity(status: PaymentAuthorizeStatus.declined, declineReason: PaymentDeclineEntity.fromRemote('verification_code_invalid')),
+          PaymentVerifyOutcome.declined,
+        ),
+      );
+
+      expect(result.failureCategory, XPayFailureCategory.cardholderChange);
+    });
+
+    test('a decline without a known reason is unknown', () {
+      expect(_map(_declined('brand_new_reason')).failureCategory, XPayFailureCategory.unknown);
+      expect(_map(_verified(const PaymentVerifyEntity(status: PaymentAuthorizeStatus.declined), PaymentVerifyOutcome.declined)).failureCategory, XPayFailureCategory.unknown);
+    });
+
+    test('a failure is grouped by its error code', () {
+      for (final MapEntry(key: code, value: category) in _errorCategories.entries) {
+        expect(_map(PaymentFlowFailedOutcomeEntity(errorCode: code)).failureCategory, category, reason: code);
+      }
+    });
+
+    test('an authorize failure is grouped by its error code', () {
+      for (final MapEntry(key: code, value: category) in _errorCategories.entries) {
+        final outcome = PaymentFlowAuthorizeFailedOutcomeEntity(
+          entryMode: PaymentEntryMode.cardQr,
+          reason: CreatePaymentAuthorizeFailureReason.fromErrorCode(code),
+          errorCode: code,
+        );
+        expect(_map(outcome).failureCategory, category, reason: code);
+      }
+    });
+
+    test('a status the flow cannot act on is a system failure', () {
+      expect(_map(_authorized(const PaymentAuthorizeEntity(status: PaymentAuthorizeStatus.voided))).failureCategory, XPayFailureCategory.system);
+    });
+
+    test('a wallet decline is a corporate policy failure', () {
+      expect(_map(const PaymentFlowWalletDeclinedOutcomeEntity()).failureCategory, XPayFailureCategory.corporatePolicy);
+    });
+
+    test('a duplicate is a session failure', () {
+      expect(_map(const PaymentFlowConflictOutcomeEntity()).failureCategory, XPayFailureCategory.session);
+    });
+  });
 }
+
+PaymentFlowAuthorizedOutcomeEntity _declined(String code) =>
+    _authorized(PaymentAuthorizeEntity(status: PaymentAuthorizeStatus.declined, declineReason: PaymentDeclineEntity.fromRemote(code)));
+
+const _declineCategories = {
+  'insufficient_funds': XPayFailureCategory.cardholderChange,
+  'card_inactive': XPayFailureCategory.cardholderChange,
+  'card_blocked': XPayFailureCategory.cardholderChange,
+  'card_expired': XPayFailureCategory.cardholderChange,
+  'card_outside_validity_window': XPayFailureCategory.cardholderChange,
+  'card_link_inactive': XPayFailureCategory.cardholderChange,
+  'per_transaction_limit_exceeded': XPayFailureCategory.corporatePolicy,
+  'daily_limit_exceeded': XPayFailureCategory.corporatePolicy,
+  'monthly_limit_exceeded': XPayFailureCategory.corporatePolicy,
+  'corporate_monthly_limit_exceeded': XPayFailureCategory.corporatePolicy,
+  'trip_budget_exceeded': XPayFailureCategory.corporatePolicy,
+  'policy_violation': XPayFailureCategory.corporatePolicy,
+  'employee_policy_violation': XPayFailureCategory.corporatePolicy,
+  'employee_policy_unavailable': XPayFailureCategory.system,
+  'merchant_not_allowed': XPayFailureCategory.system,
+  'mcc_not_allowed': XPayFailureCategory.system,
+  'channel_not_allowed': XPayFailureCategory.cardholderChange,
+  'velocity_limit_exceeded': XPayFailureCategory.cardholderChange,
+  'token_invalid_or_expired': XPayFailureCategory.cardholderRetry,
+  'verification_code_required': XPayFailureCategory.cardholderRetry,
+  'verification_code_invalid': XPayFailureCategory.cardholderChange,
+  'verification_expired': XPayFailureCategory.cardholderRetry,
+  'card_locked_too_many_attempts': XPayFailureCategory.cardholderChange,
+  'chip_cryptogram_invalid': XPayFailureCategory.cardholderChange,
+  'chip_nonce_replayed': XPayFailureCategory.cardholderRetry,
+  'chip_counter_replay': XPayFailureCategory.cardholderChange,
+  'chip_credential_revoked': XPayFailureCategory.cardholderChange,
+  'chip_credential_not_active': XPayFailureCategory.cardholderChange,
+  'service_payment_auth_failed': XPayFailureCategory.system,
+  'service_payment_invalid_request': XPayFailureCategory.system,
+  'service_payment_duplicate_order': XPayFailureCategory.session,
+  'service_payment_user_invalid': XPayFailureCategory.corporatePolicy,
+  'service_payment_in_flight': XPayFailureCategory.session,
+  'service_payment_failed': XPayFailureCategory.system,
+  'service_payment_insufficient_funds': XPayFailureCategory.corporatePolicy,
+  'service_payment_declined': XPayFailureCategory.corporatePolicy,
+  'service_payment_unavailable': XPayFailureCategory.system,
+};
+
+const _errorCategories = {
+  XPayErrorCode.unexpectedResponse: XPayFailureCategory.system,
+  'otp_delivery_failed': XPayFailureCategory.system,
+  'no_connection': XPayFailureCategory.network,
+  'no_host': XPayFailureCategory.network,
+  'timeout': XPayFailureCategory.network,
+  'not_found': XPayFailureCategory.cardholderRetry,
+  'no_registered_phone': XPayFailureCategory.cardholderChange,
+  'static_code_unavailable': XPayFailureCategory.cardholderChange,
+  XPayErrorCode.busy: XPayFailureCategory.session,
+  XPayErrorCode.invalidRequest: XPayFailureCategory.session,
+  XPayErrorCode.notInitialized: XPayFailureCategory.session,
+  'amount_locked': XPayFailureCategory.session,
+  'ride_already_paid': XPayFailureCategory.session,
+  'ride_card_not_found': XPayFailureCategory.session,
+  'ride_not_found': XPayFailureCategory.session,
+  'ride_not_on_corporate_wallet': XPayFailureCategory.session,
+  'ride_payment_session_revoked': XPayFailureCategory.session,
+  'token_expired': XPayFailureCategory.session,
+  'token_not_found': XPayFailureCategory.session,
+  'internal_error': XPayFailureCategory.unknown,
+};

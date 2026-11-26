@@ -77,7 +77,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1123.1
+      ref: v3.1126.1
 ```
 
 To update, change `ref` to a newer tag and run `flutter pub get`. Read [CHANGELOG.md](CHANGELOG.md) first: the version number does not follow Semantic Versioning, so the changelog is where breaking changes are listed.
@@ -236,13 +236,30 @@ The card number, chip data and verification code are never part of the request. 
 
 A corporate wallet payment ends differently, because no card payment is made:
 
-| Status      | Meaning for a wallet payment                                                              | Fields set                                                                        |
-| ----------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `captured`  | The rider paid from the company wallet, at the QR or with the code.                       | `externalRef`, `amount`, `currency`; `createdAt` when paid at the QR. No `authId` |
-| `declined`  | XPay declined the payment made at the QR.                                                 | `message`                                                                         |
-| `expired`   | The QR expired, or the payment session expired while the SDK was waiting for the QR.      | none                                                                              |
+| Status      | Meaning for a wallet payment                                                                                                                                                  | Fields set                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `captured`  | The rider paid from the company wallet, at the QR or with the code.                                                                                                           | `externalRef`, `amount`, `currency`; `createdAt` when paid at the QR. No `authId` |
+| `declined`  | XPay declined the payment made at the QR.                                                                                                                                     | `message`                                                                         |
+| `expired`   | The QR expired, or the payment session expired while the SDK was waiting for the QR.                                                                                          | none                                                                              |
 | `failed`    | The ride can no longer be paid from the wallet, XPay refused the payment session (`token_expired`, `ride_payment_session_revoked`), or XPay refused to report the QR payment. | `errorCode`, `message`                                                            |
-| `cancelled` | The cashier left before the rider paid. A QR on screen is cancelled with XPay first.      | none                                                                              |
+| `cancelled` | The cashier left before the rider paid. A QR on screen is cancelled with XPay first.                                                                                          | none                                                                              |
+
+### Failure category
+
+`failureCategory` groups every `declined`, `failed` and `duplicate` result, so your app can decide what to do without reading each code. It is `null` for the other statuses.
+
+| Category           | Cause                                                     | What to do                                                                                                   |
+| ------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `system`           | XPay, the SDK, or the merchant configuration              | Retry. If it still fails, do not collect cash: the driver calls XPay support, who pays on the rider's behalf |
+| `network`          | The driver's device has no working connection             | Restore the connection and retry. Do not collect cash: if it keeps failing, the driver calls XPay support    |
+| `cardholderRetry`  | The card or code was scanned, tapped or typed incorrectly | Let the rider try again with the same card. If it keeps failing, handle it as `cardholderChange`             |
+| `cardholderChange` | The card cannot be used for this payment                  | The rider uses another card or payment method, or calls XPay support                                         |
+| `corporatePolicy`  | A rule of the company that owns the card or wallet        | XPay support works with the company. If the company does not change the rule, the rider pays another way     |
+| `session`          | The payment session, the ride, or the integration         | Do not collect another way before checking the ride and the payment on your backend                          |
+| `unknown`          | Not classified yet                                        | Handle it as `system`                                                                                        |
+
+On Android the values are `SYSTEM`, `NETWORK`, `CARDHOLDER_RETRY`, `CARDHOLDER_CHANGE`, `CORPORATE_POLICY`, `SESSION` and `UNKNOWN`. The codes in each category and the
+handling rules are listed in [docs/failure_categories.vi.md](docs/failure_categories.vi.md) (Vietnamese).
 
 `message` is ready to show to the cashier, in the configured language. When XPay returned an error code with no copy of its own, the message ends with an `Error code:` line so support can trace it.
 

@@ -107,6 +107,16 @@ int _deepHash(Object? value) {
 }
 
 
+enum XPayEmbeddedFailureCategory {
+  system,
+  network,
+  cardholderRetry,
+  cardholderChange,
+  corporatePolicy,
+  session,
+  unknown;
+}
+
 enum XPayEmbeddedLanguage {
   en,
   vi;
@@ -232,6 +242,7 @@ class XPayEmbeddedRequestMessage {
 
 class XPayEmbeddedResultMessage {
   XPayEmbeddedResultMessage({
+    this.failureCategory,
     required this.status,
     this.authId,
     this.bookingRef,
@@ -244,6 +255,8 @@ class XPayEmbeddedResultMessage {
     this.amount,
     this.createdAtEpochMillis,
   });
+
+  XPayEmbeddedFailureCategory? failureCategory;
 
   XPayEmbeddedPaymentStatus status;
 
@@ -269,6 +282,7 @@ class XPayEmbeddedResultMessage {
 
   List<Object?> _toList() {
     return <Object?>[
+      failureCategory,
       status,
       authId,
       bookingRef,
@@ -289,17 +303,18 @@ class XPayEmbeddedResultMessage {
   static XPayEmbeddedResultMessage decode(Object result) {
     result as List<Object?>;
     return XPayEmbeddedResultMessage(
-      status: result[0]! as XPayEmbeddedPaymentStatus,
-      authId: result[1] as String?,
-      bookingRef: result[2] as String?,
-      captureId: result[3] as String?,
-      currency: result[4] as String?,
-      declineCode: result[5] as String?,
-      errorCode: result[6] as String?,
-      externalRef: result[7] as String?,
-      message: result[8] as String?,
-      amount: result[9] as int?,
-      createdAtEpochMillis: result[10] as int?,
+      failureCategory: result[0] as XPayEmbeddedFailureCategory?,
+      status: result[1]! as XPayEmbeddedPaymentStatus,
+      authId: result[2] as String?,
+      bookingRef: result[3] as String?,
+      captureId: result[4] as String?,
+      currency: result[5] as String?,
+      declineCode: result[6] as String?,
+      errorCode: result[7] as String?,
+      externalRef: result[8] as String?,
+      message: result[9] as String?,
+      amount: result[10] as int?,
+      createdAtEpochMillis: result[11] as int?,
     );
   }
 
@@ -312,7 +327,7 @@ class XPayEmbeddedResultMessage {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(status, other.status) && _deepEquals(authId, other.authId) && _deepEquals(bookingRef, other.bookingRef) && _deepEquals(captureId, other.captureId) && _deepEquals(currency, other.currency) && _deepEquals(declineCode, other.declineCode) && _deepEquals(errorCode, other.errorCode) && _deepEquals(externalRef, other.externalRef) && _deepEquals(message, other.message) && _deepEquals(amount, other.amount) && _deepEquals(createdAtEpochMillis, other.createdAtEpochMillis);
+    return _deepEquals(failureCategory, other.failureCategory) && _deepEquals(status, other.status) && _deepEquals(authId, other.authId) && _deepEquals(bookingRef, other.bookingRef) && _deepEquals(captureId, other.captureId) && _deepEquals(currency, other.currency) && _deepEquals(declineCode, other.declineCode) && _deepEquals(errorCode, other.errorCode) && _deepEquals(externalRef, other.externalRef) && _deepEquals(message, other.message) && _deepEquals(amount, other.amount) && _deepEquals(createdAtEpochMillis, other.createdAtEpochMillis);
   }
 
   @override
@@ -321,7 +336,7 @@ class XPayEmbeddedResultMessage {
 
   @override
   String toString() {
-    return 'XPayEmbeddedResultMessage(status: $status, authId: $authId, bookingRef: $bookingRef, captureId: $captureId, currency: $currency, declineCode: $declineCode, errorCode: $errorCode, externalRef: $externalRef, message: $message, amount: $amount, createdAtEpochMillis: $createdAtEpochMillis)';
+    return 'XPayEmbeddedResultMessage(failureCategory: $failureCategory, status: $status, authId: $authId, bookingRef: $bookingRef, captureId: $captureId, currency: $currency, declineCode: $declineCode, errorCode: $errorCode, externalRef: $externalRef, message: $message, amount: $amount, createdAtEpochMillis: $createdAtEpochMillis)';
   }
 }
 
@@ -413,29 +428,32 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is XPayEmbeddedLanguage) {
+    }    else if (value is XPayEmbeddedFailureCategory) {
       buffer.putUint8(129);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedLogCategory) {
+    }    else if (value is XPayEmbeddedLanguage) {
       buffer.putUint8(130);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedLogLevel) {
+    }    else if (value is XPayEmbeddedLogCategory) {
       buffer.putUint8(131);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedPaymentStatus) {
+    }    else if (value is XPayEmbeddedLogLevel) {
       buffer.putUint8(132);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedConfigMessage) {
+    }    else if (value is XPayEmbeddedPaymentStatus) {
       buffer.putUint8(133);
-      writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedRequestMessage) {
+      writeValue(buffer, value.index);
+    }    else if (value is XPayEmbeddedConfigMessage) {
       buffer.putUint8(134);
       writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedResultMessage) {
+    }    else if (value is XPayEmbeddedRequestMessage) {
       buffer.putUint8(135);
       writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedLogMessage) {
+    }    else if (value is XPayEmbeddedResultMessage) {
       buffer.putUint8(136);
+      writeValue(buffer, value.encode());
+    }    else if (value is XPayEmbeddedLogMessage) {
+      buffer.putUint8(137);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -447,23 +465,26 @@ class _PigeonCodec extends StandardMessageCodec {
     switch (type) {
       case 129:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedLanguage.values[value];
+        return value == null ? null : XPayEmbeddedFailureCategory.values[value];
       case 130:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedLogCategory.values[value];
+        return value == null ? null : XPayEmbeddedLanguage.values[value];
       case 131:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedLogLevel.values[value];
+        return value == null ? null : XPayEmbeddedLogCategory.values[value];
       case 132:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedPaymentStatus.values[value];
+        return value == null ? null : XPayEmbeddedLogLevel.values[value];
       case 133:
-        return XPayEmbeddedConfigMessage.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : XPayEmbeddedPaymentStatus.values[value];
       case 134:
-        return XPayEmbeddedRequestMessage.decode(readValue(buffer)!);
+        return XPayEmbeddedConfigMessage.decode(readValue(buffer)!);
       case 135:
-        return XPayEmbeddedResultMessage.decode(readValue(buffer)!);
+        return XPayEmbeddedRequestMessage.decode(readValue(buffer)!);
       case 136:
+        return XPayEmbeddedResultMessage.decode(readValue(buffer)!);
+      case 137:
         return XPayEmbeddedLogMessage.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);

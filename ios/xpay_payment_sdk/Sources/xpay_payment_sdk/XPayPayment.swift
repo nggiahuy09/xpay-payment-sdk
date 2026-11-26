@@ -47,18 +47,18 @@ public enum XPayPayment {
     @MainActor
     public static func start(from presenter: UIViewController, checkout: XPayCheckout) async -> XPayPaymentResult {
         guard config != nil, let engine = engine, let flutterApi = flutterApi else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.notInitialized)
+            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.notInitialized, failureCategory: .session)
         }
         guard activeController == nil else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.busy)
+            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.busy, failureCategory: .session)
         }
         guard presenter.viewIfLoaded?.window != nil else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed)
+            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed, failureCategory: .session)
         }
 
         let host = topmostController(above: presenter)
         guard host.isBeingDismissed == false else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed)
+            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed, failureCategory: .session)
         }
 
         let controller = XPayPaymentViewController(engine: engine)
@@ -72,7 +72,7 @@ public enum XPayPayment {
                     case .success(let message):
                         paymentResult = message.toResult()
                     case .failure:
-                        paymentResult = XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.unexpectedResponse)
+                        paymentResult = XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.unexpectedResponse, failureCategory: .session)
                     }
                     finish(controller, with: paymentResult) { continuation.resume(returning: paymentResult) }
                 }
