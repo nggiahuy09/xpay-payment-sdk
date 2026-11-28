@@ -1,6 +1,6 @@
 # XPay Payment SDK cho Flutter — Tài liệu tích hợp
 
-SDK giúp app Flutter của đối tác thu tiền bằng thẻ XPay. SDK đảm nhận toàn bộ phần thẻ trong quy trình thanh toán: đọc thẻ (chạm NFC, quét QR hoặc nhập số thẻ), gửi yêu cầu authorize lên XPay, hiển thị bước xác thực OTP/PIN khi XPay yêu cầu, rồi trả về cho app **đúng một kết quả**. Với chuyến đặt bằng ví doanh nghiệp của khách, SDK thu từ ví thay cho thẻ: khách quét mã QR bằng ứng dụng XPERISE, hoặc đọc mã được gửi tới số điện thoại hay email của khách.
+SDK giúp app Flutter của đối tác thu tiền bằng thẻ XPay. SDK đảm nhận toàn bộ phần thẻ trong quy trình thanh toán: kiểm tra chuyến đã được trả chưa, đọc thẻ (chạm NFC, quét QR hoặc nhập số thẻ), gửi yêu cầu authorize lên XPay, hiển thị bước xác thực OTP/PIN khi XPay yêu cầu, xử lý khi thanh toán không thành công (thử lại, gọi tổng đài XPAY, chờ tổng đài thanh toán dùm), rồi trả về cho app **đúng một kết quả**. Với chuyến đặt bằng ví doanh nghiệp của khách, SDK thu từ ví thay cho thẻ: khách quét mã QR bằng ứng dụng XPERISE, hoặc đọc mã được gửi tới số điện thoại hay email của khách.
 
 App của đối tác giữ mọi thứ xung quanh: đơn hàng, việc chọn phương thức thanh toán, và xử lý sau khi có kết quả.
 
@@ -31,14 +31,16 @@ Tài liệu dành cho đội mobile và backend của đối tác. Bản tiếng
 
 ## 1. SDK làm gì
 
-| SDK đảm nhận                                             | App đối tác đảm nhận                                               |
-| -------------------------------------------------------- | ------------------------------------------------------------------ |
-| Màn tổng quan & chọn phương thức, rồi các màn nhận thẻ   | Đơn hàng và phiên thanh toán của đơn                               |
-| Gửi yêu cầu authorize lên XPay                           |                                                                    |
-| Màn hình xác thực OTP/PIN, kể cả bước chọn người nhận mã | Đặt "Thẻ XPay" vào danh sách phương thức thanh toán của app        |
-| Trả về đúng một kết quả cho mỗi lần thanh toán           | Màn hình thành công/thất bại, điều hướng, cập nhật dữ liệu của app |
+| SDK đảm nhận                                                                       | App đối tác đảm nhận                                                    |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Kiểm tra trạng thái chuyến mỗi lần mở                                              | Đơn hàng và phiên thanh toán của đơn                                    |
+| Màn tổng quan & chọn phương thức, rồi các màn nhận thẻ                             | Đặt "Thẻ XPay" vào danh sách phương thức thanh toán của app             |
+| Gửi yêu cầu authorize lên XPay, màn xác thực OTP/PIN                               | Màn thanh toán thành công của app, điều hướng, cập nhật dữ liệu của app |
+| Popup thanh toán không thành công, màn chọn cách thanh toán tiếp, màn chờ tổng đài | Báo `payment-failure` từ server, void giao dịch còn treo, thu tiền mặt  |
+| Màn "Thanh toán thành công" khi chuyến đã được trả, màn chuyến đã đóng hoặc đã huỷ |                                                                         |
+| Trả về đúng một kết quả cho mỗi lần thanh toán                                     |                                                                         |
 
-SDK **không** hiển thị màn hình thành công hay bị từ chối. App tự hiển thị dựa trên kết quả trả về.
+SDK hiện lỗi và các màn xử lý lỗi của mình, nhưng **không** thay màn thanh toán thành công của app. App tự hiển thị dựa trên kết quả trả về.
 
 Màn đầu tiên của SDK hiện số tiền, thông tin chuyến (mã cuốc, điểm đón, điểm trả, biển số xe) và các phương thức theo đúng thứ tự `entry_modes` của phiên. Nhân viên chọn một:
 
@@ -90,6 +92,7 @@ App của đối tác phải tương thích với các dependency mà SDK dùng.
 | `image_picker`       | `^1.2.3`                   |
 | `app_settings`       | `7.0.0`                    |
 | `pretty_qr_code`     | `^3.6.0`                   |
+| `url_launcher`       | `^6.3.1`                   |
 
 Danh sách đầy đủ nằm trong `pubspec.yaml` của SDK. SDK dùng container `get_it` riêng (`GetIt.asNewInstance()`), nên không đụng tới các đăng ký `get_it` của app.
 
@@ -102,7 +105,7 @@ dependencies:
   xpay_payment_sdk:
     git:
       url: https://github.com/nggiahuy09/xpay-payment-sdk.git
-      ref: v3.1126.1
+      ref: v3.1128.1
 ```
 
 Nâng cấp: đổi `ref` sang tag mới rồi chạy `flutter pub get`. Đọc [CHANGELOG.md](CHANGELOG.md) trước, vì số phiên bản không theo Semantic Versioning nên breaking change chỉ được ghi ở đó.
@@ -173,15 +176,25 @@ sequenceDiagram
 Lưu ý:
 
 1. SDK gửi token qua header `X-Ride-Payment` trong mọi request của lần thanh toán đó.
-2. SDK **không** refresh token. Khi XPay từ chối token, ví dụ vì phiên đã hết hạn, thanh toán kết thúc với `failed` và một `errorCode`, ví dụ `token_expired`. App xin phiên mới từ backend rồi bắt đầu thanh toán lại. Với chuyến ví doanh nghiệp, phiên hết hạn lúc đang chờ khách quét QR cho kết quả `expired`.
+2. Phiên hết hạn giữa chừng thì SDK gọi `fetchSession` để lấy phiên mới, xem [Gia hạn phiên](#gia-hạn-phiên-fetchsession). Không truyền `fetchSession`, hoặc không lấy được phiên mới, thì SDK hiện popup "Không mở được phiên thanh toán" và trả `retryInPartner`.
 3. SDK chỉ giữ token trong bộ nhớ khi thanh toán đang mở, không lưu xuống máy và không ghi log token.
 4. **Số tiền bị khoá theo phiên.** SDK thu đúng `amount` trong phản hồi của phiên. Muốn thu số tiền khác thì xin phiên mới; không sửa JSON trước khi đưa vào SDK.
-5. **Mở phiên mới cho cùng một chuyến sẽ thu hồi các phiên trước.** Request dùng phiên cũ bị trả `ride_payment_session_revoked` (HTTP 401). Chỉ xin phiên ngay trước khi thu tiền, và không xin phiên mới khi một thanh toán của chuyến đó còn đang mở.
+5. **Mở phiên mới cho cùng một chuyến sẽ thu hồi các phiên trước.** Request dùng phiên cũ bị trả `ride_payment_session_revoked` (HTTP 401), SDK hiện popup "Cước đã được cập nhật" và trả `retryInPartner`. Chỉ xin phiên ngay trước khi thu tiền, và không xin phiên mới khi một thanh toán của chuyến đó còn đang mở (trừ trong `fetchSession`).
 6. **Dữ liệu chuyến lấy từ phiên.** XPay tự gắn điểm đón, điểm đến, biển số, cước, phụ phí và quãng đường của phiên vào giao dịch. App không truyền các thông tin này cho SDK.
 7. **Mã tham chiếu lấy từ phiên.** SDK dùng `external_ref` (dạng `XP-…`) trong phản hồi, nên `externalRef` trong kết quả cũng là `XP-…`.
-8. **JSON không đọc được thì không thanh toán.** Chuỗi không phải JSON object, thiếu `session_token`, hoặc `amount` không phải số nguyên đồng (ví dụ `"138000.50"`), hoặc (với phiên thẻ) không còn phương thức nào trong `entry_modes` thì `start` trả `failed` với `errorCode = sdk_invalid_request` và không gửi gì lên XPay. Lý do cụ thể được gửi qua `onLog` (`feature = payment`, `action = start_payment`, xem [mục 13](#13-logging)).
+8. **JSON không đọc được thì không thanh toán.** Chuỗi không phải JSON object, thiếu `session_token`, hoặc `amount` không phải số nguyên đồng (ví dụ `"138000.50"`), hoặc (với phiên thẻ) không còn phương thức nào trong `entry_modes` thì `start` trả `unavailable` với `errorCode = sdk_invalid_request` và không gửi gì lên XPay. Lý do cụ thể được gửi qua `onLog` (`feature = payment`, `action = start_payment`, xem [mục 13](#13-logging)).
 
 **Tuyệt đối không đưa merchant key, API key hay bất kỳ thông tin xác thực nào của server vào app.**
+
+### Gia hạn phiên: `fetchSession`
+
+Phiên chỉ sống 15 phút, nên có thể hết hạn khi tài xế đang thao tác (khách tìm thẻ, chờ mã OTP). Truyền `fetchSession` vào `XPayPaymentRequest.fromSession` để SDK tự lấy phiên mới mà không làm gián đoạn thanh toán:
+
+1. Khi XPay trả `401 ride_payment_session_expired`, SDK gọi `fetchSession` một lần, chờ tối đa 15 giây.
+2. `fetchSession` gọi backend xin lại phiên cho **cùng chuyến, cùng cước** (`POST /merchant/rides/{order_id}/payment-session`) và trả về nguyên JSON phản hồi.
+3. SDK gửi lại đúng request vừa bị từ chối, cùng body và cùng idempotency key, với phiên mới. Tài xế chỉ thấy loading lâu hơn một chút.
+4. Phiên mới có cước khác: SDK hiện popup "Cước đã được cập nhật" và trả `retryInPartner` với `failure.errorCode = sdk_session_amount_changed`, `failure.note = cước đổi`.
+5. `fetchSession` ném lỗi, quá 15 giây, hoặc trả phiên của chuyến khác: SDK hiện popup "Không mở được phiên thanh toán" và trả `retryInPartner` với `failure.reason = sdkError`.
 
 ## 6. Khởi tạo SDK
 
@@ -201,7 +214,7 @@ Lưu ý khi gọi lại `initialize`:
 
 1. Không gọi khi đang có một thanh toán mở (tức `start` chưa trả kết quả). Khi đó `initialize` ném `StateError` và giữ nguyên cấu hình cũ.
 2. Không gọi khi lần `initialize` trước chưa xong. Khi đó lần gọi sau ném `StateError`, lần gọi trước vẫn chạy tiếp.
-3. Trong lúc `initialize` đang chạy, `start` trả `failed` với `errorCode = sdk_not_initialized`. Luôn `await` xong `initialize` rồi mới gọi `start`.
+3. Trong lúc `initialize` đang chạy, `start` trả `unavailable` với `errorCode = sdk_not_initialized`. Luôn `await` xong `initialize` rồi mới gọi `start`.
 
 ## 7. Thực hiện một thanh toán
 
@@ -212,20 +225,27 @@ sequenceDiagram
     participant App as App đối tác
     participant SDK as XPay SDK
     participant XPay as XPay API
-    App->>App: Xin session token từ backend (mục 5)
+    App->>App: Xin phiên thanh toán từ backend (mục 5)
     App->>SDK: start(context, request kèm JSON phiên)
     SDK->>SDK: Kiểm tra request
-    SDK->>SDK: Màn tổng quan, nhân viên chọn phương thức
-    SDK->>SDK: Mở màn hình nhận thẻ (NFC / QR / nhập số thẻ), trừ thẻ đã liên kết
-    SDK->>XPay: POST /merchant/payments/authorize
-    XPay-->>SDK: approved / captured / declined / cần xác thực
-    opt XPay yêu cầu OTP hoặc PIN
-        SDK->>SDK: Màn hình xác thực
-        SDK->>XPay: POST /merchant/payments/{authId}/verify
-        XPay-->>SDK: Kết quả xác thực
+    SDK->>XPay: GET /merchant/ride-payment
+    XPay-->>SDK: Trạng thái chuyến
+    alt Chuyến đã được trả, đã đóng hoặc đã huỷ
+        SDK->>SDK: Màn 4 hoặc màn D
+    else Chuyến chưa ai trả
+        SDK->>SDK: Màn tổng quan, nhân viên chọn phương thức, nhận thẻ
+        SDK->>XPay: POST /merchant/payments/authorize
+        XPay-->>SDK: approved / captured / declined / cần xác thực
+        opt XPay yêu cầu OTP hoặc PIN
+            SDK->>XPay: POST /merchant/payments/{authId}/verify
+            XPay-->>SDK: Kết quả xác thực
+        end
+        opt Thanh toán không thành công
+            SDK->>SDK: Popup 4.1, màn 4.2, màn 4.3
+        end
     end
     SDK-->>App: XPayPaymentResult
-    App->>App: Hiển thị kết quả, xác nhận với backend
+    App->>App: Hiển thị kết quả, xác nhận với backend, báo payment-failure nếu cần
 ```
 
 ### Ví dụ: thanh toán chuyến xe
@@ -237,43 +257,52 @@ Future<void> payWithXPay(BuildContext context, Order order) async {
 
   final result = await XPayPayment.start(
     context,
-    XPayPaymentRequest.fromSession(sessionJson),
+    XPayPaymentRequest.fromSession(
+      sessionJson,
+      () => myBackend.openPaymentSession(order.id, fare: order.fare, subFee: order.subFee, distanceKm: order.distanceKm),
+    ),
   );
+  await myBackend.saveXPayResult(order.id, result);
 
   switch (result.status) {
-    case XPayPaymentStatus.approved:
-    case XPayPaymentStatus.captured:
-      await confirmOnBackend(order.id, externalRef: result.externalRef, authId: result.authId);
-    case XPayPaymentStatus.declined:
-    case XPayPaymentStatus.duplicate:
-    case XPayPaymentStatus.failed:
-      showMessage(result.message ?? 'Thanh toán không thành công.');
-    case XPayPaymentStatus.expired:
-      showMessage('Đã hết thời gian xác thực. Vui lòng tạo thanh toán mới.');
+    case XPayPaymentStatus.paid:
+      await confirmOnBackend(order.id, externalRef: result.externalRef);
+      showPaidScreen(order);
+    case XPayPaymentStatus.rideClosed:
+      closeRide(order, result.rideStatus);
+    case XPayPaymentStatus.retryInPartner:
+    case XPayPaymentStatus.otherMethod:
+    case XPayPaymentStatus.csPending:
     case XPayPaymentStatus.cancelled:
-    case XPayPaymentStatus.unsupported:
-      break;
+    case XPayPaymentStatus.unavailable:
+      showPaymentScreen(order, lastXPayResult: result);
   }
 }
 ```
 
-`openPaymentSession` là hàm của đối tác: nó gọi backend của đối tác, backend gọi `payment-session` với body ở [mục 5](#5-xác-thực) rồi trả về nguyên body phản hồi dưới dạng chuỗi.
+`openPaymentSession` là hàm của đối tác: nó gọi backend của đối tác, backend gọi `payment-session` với body ở [mục 5](#5-xác-thực) rồi trả về nguyên body phản hồi dưới dạng chuỗi. Hàm thứ hai truyền vào `fromSession` là `fetchSession`, xem [Gia hạn phiên](#gia-hạn-phiên-fetchsession).
+
+Màn thanh toán của app dùng `lastXPayResult` để: cho mở lại XPAY ngay khi `isRetryable`; nhắc hỏi tổng đài trước khi thu cách khác với `csPending`; void `pendingAuthId` và báo `payment-failure` khi tài xế chốt cách thu khác. Xem [mục 9](#9-kết-quả-và-cách-xử-lý).
 
 ### Hành vi của `start`
 
 1. `start` mở màn hình SDK trên **root navigator** của app. Khi thanh toán kết thúc, SDK tự đóng màn hình của mình rồi trả kết quả. SDK không đụng tới router của app.
 2. `context` truyền vào phải nằm dưới một `MaterialApp`.
-3. Trong lúc XPay đang authorize thẻ hoặc đang xác thực mã của ví doanh nghiệp, nút back bị vô hiệu hoá, để nhân viên không rời khỏi một thanh toán có thể đã bị trừ tiền.
-4. Bấm back ở màn nhận thẻ thì quay về danh sách phương thức. Bấm back ở danh sách phương thức hoặc ở màn xác thực thì kết quả là `cancelled`.
-5. Mã QR không phải của XPay, hoặc không đúng loại với phương thức đã chọn (QR thẻ / mã dùng một lần), bị báo lỗi ngay trên màn hình quét, SDK không gửi request nào và nhân viên có thể quét lại.
-6. Không phương thức nào của phiên chạy được trên thiết bị (ví dụ phiên chỉ có `chip_tap`, chạy trên iOS) thì `start` trả `unsupported` mà không mở màn hình nào. Phiên ví doanh nghiệp luôn mở được, vì mã QR và gửi mã chạy trên mọi thiết bị.
-7. Với phiên ví doanh nghiệp, bấm back ở màn QR hoặc màn nhập mã thì quay về danh sách phương thức. Xem [Chuyến thanh toán bằng ví doanh nghiệp](#chuyến-thanh-toán-bằng-ví-doanh-nghiệp).
+3. Mỗi lần mở, SDK kiểm tra trạng thái chuyến trước (tối đa 15 giây). Chuyến đã được trả thì vào thẳng màn 4, đã đóng hoặc đã huỷ thì vào màn D, không cho thu lần nữa. Không kiểm tra được (mất mạng) thì vào màn chọn phương thức như bình thường.
+4. Trong lúc XPay đang authorize thẻ hoặc đang xác thực mã, nút back bị vô hiệu hoá, để nhân viên không rời khỏi một thanh toán có thể đã bị trừ tiền.
+5. Bấm back ở màn nhận thẻ thì quay về danh sách phương thức. Bấm back ở danh sách phương thức thì kết quả là `cancelled`. Bấm back ở màn xác thực OTP/PIN thì SDK hỏi lại; đồng ý rời đi thì kết quả là `cancelled` kèm `pendingAuthId`.
+6. Mã QR không phải của XPay, hoặc không đúng loại với phương thức đã chọn (QR thẻ / mã dùng một lần), bị báo lỗi ngay trên màn hình quét, SDK không gửi request nào và nhân viên có thể quét lại.
+7. Không phương thức nào của phiên chạy được trên thiết bị (ví dụ phiên chỉ có `chip_tap`, chạy trên iOS) thì `start` trả `unavailable` với `errorCode = sdk_unsupported` mà không mở màn hình nào. Phiên ví doanh nghiệp luôn mở được, vì mã QR và gửi mã chạy trên mọi thiết bị.
+8. Với phiên ví doanh nghiệp, bấm back ở màn QR hoặc màn nhập mã thì quay về danh sách phương thức. Xem [Chuyến thanh toán bằng ví doanh nghiệp](#chuyến-thanh-toán-bằng-ví-doanh-nghiệp).
+9. Thanh toán không thành công được SDK xử lý trên màn hình của SDK (popup 4.1, màn 4.2, màn 4.3) trước khi đóng. App không cần hiện thêm popup lỗi.
 
 ## 8. API reference
 
 ### `XPayPayment`
 
 Facade tĩnh, là điểm vào duy nhất của SDK.
+
+`XPayPayment.supportHotline` (`String`, `'19002189'`): số tổng đài XPAY. SDK đã hiện số này trên popup lỗi; dùng khi app cần hiện số tổng đài trên màn của mình.
 
 #### `static Future<void> initialize(XPayConfig config)`
 
@@ -285,21 +314,21 @@ Mở luồng thanh toán và luôn hoàn thành với **đúng một** `XPayPaym
 
 Thứ tự kiểm tra trước khi mở màn hình:
 
-| Điều kiện                                                       | Kết quả                                     |
-| --------------------------------------------------------------- | ------------------------------------------- |
-| Chưa gọi `initialize`, hoặc `initialize` đang chạy              | `failed`, `errorCode = sdk_not_initialized` |
-| Đang có một thanh toán khác mở                                  | `failed`, `errorCode = sdk_busy`            |
-| Request không hợp lệ (xem [quy tắc](#quy-tắc-kiểm-tra-request)) | `failed`, `errorCode = sdk_invalid_request` |
-| Thiết bị không hỗ trợ phương thức                               | `unsupported`                               |
-| `context` không còn mounted                                     | `cancelled`                                 |
+| Điều kiện                                                       | Kết quả                                          |
+| --------------------------------------------------------------- | ------------------------------------------------ |
+| Chưa gọi `initialize`, hoặc `initialize` đang chạy              | `unavailable`, `errorCode = sdk_not_initialized` |
+| Đang có một thanh toán khác mở                                  | `unavailable`, `errorCode = sdk_busy`            |
+| Request không hợp lệ (xem [quy tắc](#quy-tắc-kiểm-tra-request)) | `unavailable`, `errorCode = sdk_invalid_request` |
+| Thiết bị không chạy được phương thức nào của phiên              | `unavailable`, `errorCode = sdk_unsupported`     |
+| `context` không còn mounted                                     | `cancelled`                                      |
 
 ### `XPayConfig`
 
-| Trường        | Kiểu                           | Bắt buộc | Mặc định          | Mô tả                                                        |
-| ------------- | ------------------------------ | -------- | ----------------- | ------------------------------------------------------------ |
-| `environment` | `XPayEnvironment`              | Có       |                   | Môi trường XPay (sandbox hoặc production)                    |
-| `language`    | `XPayLanguage`                 | Không    | `XPayLanguage.vi` | Ngôn ngữ của màn hình SDK và của `XPayPaymentResult.message` |
-| `onLog`       | `void Function(XPayLogEvent)?` | Không    | `null`            | Nhận sự kiện nghiệp vụ, xem [mục 13](#13-logging)            |
+| Trường        | Kiểu                           | Bắt buộc | Mặc định          | Mô tả                                             |
+| ------------- | ------------------------------ | -------- | ----------------- | ------------------------------------------------- |
+| `environment` | `XPayEnvironment`              | Có       |                   | Môi trường XPay (sandbox hoặc production)         |
+| `language`    | `XPayLanguage`                 | Không    | `XPayLanguage.vi` | Ngôn ngữ của màn hình SDK                         |
+| `onLog`       | `void Function(XPayLogEvent)?` | Không    | `null`            | Nhận sự kiện nghiệp vụ, xem [mục 13](#13-logging) |
 
 ### `XPayEnvironment`
 
@@ -316,17 +345,18 @@ Thứ tự kiểm tra trước khi mở màn hình:
 
 ### `XPayPaymentRequest`
 
-Tạo bằng `XPayPaymentRequest.fromSession(...)`.
+Tạo bằng `XPayPaymentRequest.fromSession(sessionJson, [fetchSession])`.
 
-| Trường        | Kiểu     | Bắt buộc | Mặc định | Mô tả                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------- | -------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sessionJson` | `String` | Có       |          | Nguyên body phản hồi của `POST /merchant/rides/{order_id}/payment-session`. SDK lấy `session_token`, `amount`, `external_ref`, `payment_template.currency` (mặc định `VND`), `payment_template.product_type`, `payment_method` (mặc định `card`), `entry_modes`, `ride_card`, `order_id` và thông tin chuyến trong `payment_template.enhanced_data` từ đây. Xem [mục 5](#5-xác-thực) |
+| Trường         | Kiểu                         | Bắt buộc | Mô tả                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------- | ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sessionJson`  | `String`                     | Có       | Nguyên body phản hồi của `POST /merchant/rides/{order_id}/payment-session`. SDK lấy `session_token`, `amount`, `external_ref`, `payment_template.currency` (mặc định `VND`), `payment_template.product_type`, `payment_method` (mặc định `card`), `entry_modes`, `ride_card`, `order_id` và thông tin chuyến trong `payment_template.enhanced_data` từ đây. Xem [mục 5](#5-xác-thực) |
+| `fetchSession` | `Future<String> Function()?` | Không    | SDK gọi khi phiên hết hạn giữa chừng. Trả về nguyên JSON của một phiên mới cho **cùng chuyến, cùng cước**. Xem [Gia hạn phiên](#gia-hạn-phiên-fetchsession)                                                                                                                                                                                                                          |
 
 Số thẻ, dữ liệu chip và mã xác thực **không** nằm trong request. SDK tự thu thập các thông tin này.
 
 ### Quy tắc kiểm tra request
 
-SDK kiểm tra request trước khi mở bất kỳ màn hình nào. Vi phạm một trong các quy tắc dưới đây thì `start` trả `failed` với `errorCode = sdk_invalid_request` và **không gửi gì lên XPay**:
+SDK kiểm tra request trước khi mở bất kỳ màn hình nào. Vi phạm một trong các quy tắc dưới đây thì `start` trả `unavailable` với `errorCode = sdk_invalid_request` và **không gửi gì lên XPay**:
 
 1. `sessionJson` là một JSON object có `session_token` không rỗng.
 2. `amount` trong JSON là số nguyên đồng (chuỗi như `"138000"` hoặc `"138000.00"`), tối thiểu 1.000.
@@ -335,40 +365,75 @@ SDK kiểm tra request trước khi mở bất kỳ màn hình nào. Vi phạm m
 5. Với phiên thẻ, `entry_modes` còn ít nhất một phương thức SDK biết. Giá trị lạ bị bỏ qua; `ride_card` bị bỏ qua khi thiếu `ride_card.card_last4` hoặc `order_id`. Phiên có `payment_method = corporate_wallet` không cần `entry_modes`.
 6. `payment_method` thiếu hoặc là giá trị SDK chưa biết thì phiên được xử lý như phiên thẻ.
 
-SDK không kiểm tra phiên còn hạn hay đã bị thu hồi. XPay kiểm tra ở bước authorize và trả `token_expired` hoặc `ride_payment_session_revoked`.
+SDK không kiểm tra phiên còn hạn hay đã bị thu hồi trước khi mở. Khi XPay báo phiên hết hạn, SDK gọi `fetchSession`; phiên bị thu hồi đi luồng B ([mục 9](#9-kết-quả-và-cách-xử-lý)).
 
 ### `XPayPaymentResult`
 
-| Trường            | Kiểu                   | Mô tả                                                                                                |
-| ----------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `status`          | `XPayPaymentStatus`    | Trạng thái cuối cùng, luôn có                                                                        |
-| `failureCategory` | `XPayFailureCategory?` | Nhóm lỗi khi `declined`, `failed` hoặc `duplicate`. Xem [mục 9](#9-kết-quả-và-cách-xử-lý)            |
-| `authId`          | `String?`              | Mã authorize của XPay. Dùng để đối soát với backend. Luôn `null` với thanh toán bằng ví doanh nghiệp |
-| `captureId`       | `String?`              | Mã capture, chỉ có khi `captured`                                                                    |
-| `bookingRef`      | `String?`              | Mã booking, có khi thanh toán thành công sau bước xác thực                                           |
-| `externalRef`     | `String?`              | Mã tham chiếu của đối tác, do XPay trả về                                                            |
-| `amount`          | `int?`                 | Số tiền XPay ghi nhận                                                                                |
-| `currency`        | `String?`              | Mã tiền tệ XPay ghi nhận                                                                             |
-| `createdAt`       | `DateTime?`            | Thời điểm XPay tạo giao dịch                                                                         |
-| `declineCode`     | `String?`              | Mã từ chối thô từ XPay, khi `declined`                                                               |
-| `errorCode`       | `String?`              | Mã lỗi, khi `failed`. Xem [mục 10](#10-mã-lỗi)                                                       |
-| `message`         | `String?`              | Câu thông báo sẵn sàng hiển thị cho nhân viên, theo ngôn ngữ đã cấu hình                             |
-| `isSuccessful`    | `bool` (getter)        | `true` khi `status` là `approved` hoặc `captured`                                                    |
+| Trường          | Kiểu                  | Mô tả                                                                                                                      |
+| --------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `status`        | `XPayPaymentStatus`   | Trạng thái cuối cùng, luôn có. Xem [mục 9](#9-kết-quả-và-cách-xử-lý)                                                       |
+| `failure`       | `XPayPaymentFailure?` | Lý do XPay không thu được, có với `retryInPartner`, `otherMethod`, `csPending`, `unavailable`                              |
+| `pendingAuthId` | `String?`             | Giao dịch thẻ còn chờ mã OTP/PIN khi SDK đóng. Server đối tác void trước khi thu cách khác                                 |
+| `paidBy`        | `XPayPaidBy?`         | Với `paid`: ai đã thu, `partner` (thu tại xe qua SDK) hoặc `cs` (tổng đài trả dùm)                                         |
+| `rideStatus`    | `XPayRideStatus?`     | Với `rideClosed`: `completed` (tổng đài đã đóng chuyến, không thu) hoặc `cancelled` (chuyến đã huỷ)                        |
+| `authId`        | `String?`             | Với `paid`: mã giao dịch thẻ. Luôn `null` với thanh toán bằng ví doanh nghiệp                                              |
+| `captureId`     | `String?`             | Với `paid`: mã capture, nếu có                                                                                             |
+| `externalRef`   | `String?`             | Với `paid`: mã chuyến `XP-…`                                                                                               |
+| `amount`        | `int?`                | Với `paid`: số tiền XPay đã thu. Khi tổng đài trả dùm, có thể khác số đã khoá trong phiên                                  |
+| `currency`      | `String?`             | Với `paid`: mã tiền tệ                                                                                                     |
+| `createdAt`     | `DateTime?`           | Với `paid`: thời điểm XPay ghi nhận, nếu có                                                                                |
+| `errorCode`     | `String?`             | Với `unavailable`: mã lỗi của SDK. Xem [mục 10](#10-mã-lỗi)                                                                |
+| `isSuccessful`  | `bool` (getter)       | `true` khi `status` là `paid`                                                                                              |
+| `isRetryable`   | `bool` (getter)       | `true` với `retryInPartner` và `cancelled`: app được mở lại XPAY ngay (bằng phiên mới). `false` với các trạng thái còn lại |
+
+### `XPayPaymentFailure`
+
+| Trường      | Kiểu                | Mô tả                                                                                                                                     |
+| ----------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `reason`    | `XPayFailureReason` | Lý do để server gửi nguyên văn vào `payment-failure`                                                                                      |
+| `authId`    | `String?`           | Giao dịch thẻ bị từ chối gần nhất. Chuyến ví không có                                                                                     |
+| `errorCode` | `String?`           | Mã lỗi gốc (mã từ chối hoặc mã API), dùng để tra cứu và đối soát. Xem [mục 10](#10-mã-lỗi)                                                |
+| `note`      | `String?`           | Ghi chú cho tổng đài: `cước đổi`, `chờ tổng đài quá 5 phút`, hoặc mã lỗi khi `reason` là `sdkError`. Gửi vào `note` của `payment-failure` |
 
 ### `XPayPaymentStatus`
 
-Xem [mục 9](#9-kết-quả-và-cách-xử-lý).
+| Giá trị          | `isRetryable` | Khi nào                                                                       |
+| ---------------- | ------------- | ----------------------------------------------------------------------------- |
+| `paid`           | `false`       | Chuyến đã được thanh toán, qua SDK hoặc do tổng đài trả dùm                   |
+| `retryInPartner` | `true`        | Popup lỗi luồng B, tài xế bấm "Quay lại trang thanh toán"                     |
+| `otherMethod`    | `false`       | Màn 4.2, tài xế chọn "Thử lại với phương thức thanh toán khác"                |
+| `csPending`      | `false`       | Màn 4.3 hết 5 phút, hoặc tài xế bấm back. Tổng đài có thể vẫn đang thanh toán |
+| `rideClosed`     | `false`       | Màn D: chuyến đã đóng không thu, hoặc đã huỷ                                  |
+| `cancelled`      | `true`        | Tài xế thoát trước khi có kết quả, hoặc app đóng màn hình SDK                 |
+| `unavailable`    | `false`       | SDK không mở được màn hình thanh toán                                         |
+
+### `XPayFailureReason`
+
+| Giá trị           | `toRemote()`       | Ý nghĩa                                        |
+| ----------------- | ------------------ | ---------------------------------------------- |
+| `paymentDeclined` | `payment_declined` | Thẻ hoặc ví từ chối, hoặc hết số lần thử       |
+| `sdkError`        | `sdk_error`        | Lỗi hệ thống, lỗi phiên, lỗi tích hợp hoặc SDK |
+| `other`           | `other`            | Lý do khác, hiện là cước vừa đổi               |
+
+### `XPayPaidBy` và `XPayRideStatus`
+
+| Enum             | Giá trị                                                                        |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `XPayPaidBy`     | `partner`: thu tại xe qua SDK. `cs`: tổng đài XPAY trả dùm                     |
+| `XPayRideStatus` | `completed`: tổng đài đã đóng chuyến, không thu. `cancelled`: chuyến đã bị huỷ |
 
 ### `XPayErrorCode`
 
 Hằng số cho các mã lỗi do chính SDK sinh ra.
 
-| Hằng số                            | Giá trị                   |
-| ---------------------------------- | ------------------------- |
-| `XPayErrorCode.notInitialized`     | `sdk_not_initialized`     |
-| `XPayErrorCode.invalidRequest`     | `sdk_invalid_request`     |
-| `XPayErrorCode.busy`               | `sdk_busy`                |
-| `XPayErrorCode.unexpectedResponse` | `sdk_unexpected_response` |
+| Hằng số                              | Giá trị                      |
+| ------------------------------------ | ---------------------------- |
+| `XPayErrorCode.notInitialized`       | `sdk_not_initialized`        |
+| `XPayErrorCode.busy`                 | `sdk_busy`                   |
+| `XPayErrorCode.invalidRequest`       | `sdk_invalid_request`        |
+| `XPayErrorCode.unsupported`          | `sdk_unsupported`            |
+| `XPayErrorCode.unexpectedResponse`   | `sdk_unexpected_response`    |
+| `XPayErrorCode.sessionAmountChanged` | `sdk_session_amount_changed` |
 
 ### `XPayLogEvent`
 
@@ -385,134 +450,71 @@ Hằng số cho các mã lỗi do chính SDK sinh ra.
 
 ## 9. Kết quả và cách xử lý
 
-| Trạng thái    | Ý nghĩa                                                  | Trường có giá trị                                                                                   | App nên làm gì                                                       |
-| ------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `approved`    | XPay đã duyệt (authorize). Có thể được capture sau       | `authId`, `externalRef`, `amount`, `currency`, `createdAt`; thêm `bookingRef` nếu qua bước xác thực | Coi là thành công, xác nhận với backend rồi hoàn tất đơn             |
-| `captured`    | XPay đã duyệt và đã capture                              | Như `approved`, thêm `captureId`                                                                    | Như `approved`                                                       |
-| `declined`    | XPay từ chối                                             | `declineCode`, `message`; `authId` nếu có                                                           | Hiển thị `message`, cho nhân viên thử thẻ khác hoặc phương thức khác |
-| `cancelled`   | Nhân viên thoát trước khi thanh toán xong                | `authId` nếu thanh toán đã được authorize và đang chờ xác thực                                      | Quay lại màn chọn phương thức. Nếu có `authId`, kiểm tra với backend |
-| `duplicate`   | XPay đang giữ một request khác dưới cùng idempotency key | `message`                                                                                           | Kiểm tra với backend trước khi thu tiền lại                          |
-| `failed`      | Request lỗi, hoặc XPay trả dữ liệu SDK không xử lý được  | `errorCode`, `message`; `authId` nếu có                                                             | Hiển thị `message`. Nếu có `authId`, kiểm tra với backend            |
-| `expired`     | Hết thời gian xác thực                                   | `authId`                                                                                            | Tạo thanh toán mới                                                   |
-| `unsupported` | Thiết bị không chạy được phương thức này                 | Không có                                                                                            | Ẩn phương thức này, chọn phương thức khác                            |
+SDK tự hiện lỗi và hướng dẫn tài xế trên màn hình của SDK: thử lại trong SDK, quay về app, hoặc gọi tổng đài XPAY rồi chọn cách thanh toán tiếp. Khi SDK đóng, app nhận một kết quả và làm theo bảng dưới. Năm luồng xử lý, từng màn hình và quy trình đầy đủ: [docs/failure_handling.vi.md](docs/failure_handling.vi.md).
 
-Về `approved` và `captured`: với thẻ (chạm NFC, quét QR in trên thẻ, nhập số thẻ) SDK yêu cầu XPay tự capture; với QR trên app XPay thì không. Luôn xử lý cả hai trạng thái như thanh toán thành công.
+| Trạng thái       | SDK đóng ở                                                      | Trường có giá trị                                                                                | App nên làm gì                                                                                                                |
+| ---------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `paid`           | Màn 4 "Thanh toán thành công", tự đóng sau 3 giây               | `paidBy`, `externalRef`, `amount`, `currency`; `authId`, `captureId`, `createdAt` khi có         | Xác nhận với backend bằng `externalRef`, hiện màn thành công của app                                                          |
+| `retryInPartner` | Popup lỗi, "Quay lại trang thanh toán"                          | `failure`                                                                                        | Về màn thanh toán, cho mở lại XPAY bằng phiên mới. `failure.note = cước đổi` thì hiện lại số tiền mới trước                   |
+| `otherMethod`    | Màn 4.2, "Thử lại với phương thức thanh toán khác"              | `failure`; `pendingAuthId` khi có                                                                | Void `pendingAuthId` nếu có, về màn thanh toán để chọn cách khác, báo `payment-failure`                                       |
+| `csPending`      | Màn 4.3 "Đang chờ tổng đài thanh toán", hết 5 phút hoặc back    | `failure` (`reason = paymentDeclined`, `note = chờ tổng đài quá 5 phút`); `pendingAuthId` khi có | **Không thu cách khác ngay**: hỏi tổng đài trước. Báo `payment-failure`; thu tiền mặt thì báo `paid_cash` trước khi nhận tiền |
+| `rideClosed`     | Màn D "Tổng đài đã đóng chuyến, không thu" hoặc "Chuyến đã huỷ" | `rideStatus`                                                                                     | Không thu thêm, cập nhật chuyến theo `rideStatus`                                                                             |
+| `cancelled`      | Tài xế thoát trước khi có kết quả, hoặc app đóng màn hình SDK   | `pendingAuthId` khi tài xế rời màn OTP/PIN                                                       | Về màn thanh toán. Void `pendingAuthId` nếu có. Có thể mở lại XPAY                                                            |
+| `unavailable`    | Không mở màn hình nào                                           | `errorCode`, `failure` (`reason = sdkError`)                                                     | Xem [mục 10](#10-mã-lỗi): sửa tích hợp, hoặc để tài xế chọn cách khác                                                         |
 
-Thanh toán bằng ví doanh nghiệp không tạo giao dịch thẻ, nên kết quả khác bảng trên:
+Lưu ý:
 
-| Trạng thái  | Ý nghĩa với thanh toán ví                                                                                                                                           | Trường có giá trị                                                                      | App nên làm gì                                             |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `captured`  | Khách đã trả bằng ví doanh nghiệp, qua mã QR hoặc qua mã gửi tới khách                                                                                              | `externalRef`, `amount`, `currency`; `createdAt` nếu trả qua QR. **Không có `authId`** | Coi là thành công, xác nhận với backend bằng `externalRef` |
-| `declined`  | XPay từ chối khoản thanh toán qua mã QR                                                                                                                             | `message`                                                                              | Hiển thị `message`                                         |
-| `expired`   | Mã QR hết hạn, hoặc phiên thu tiền hết hạn khi SDK đang chờ khách quét QR                                                                                           | Không có                                                                               | Xin phiên mới rồi thanh toán lại                           |
-| `failed`    | Chuyến không còn thanh toán được bằng ví, XPay từ chối phiên thu tiền (`token_expired`, `ride_payment_session_revoked`), hoặc XPay từ chối trả trạng thái của mã QR | `errorCode`, `message`                                                                 | Hiển thị `message`, kiểm tra chuyến với backend            |
-| `cancelled` | Nhân viên thoát trước khi khách trả. Mã QR đang hiện được huỷ với XPay trước khi thoát                                                                              | Không có                                                                               | Kiểm tra chuyến với backend trước khi thu bằng cách khác   |
-
-### Nhóm lỗi
-
-`failureCategory` cho biết mỗi kết quả `declined`, `failed` hoặc `duplicate` thuộc nhóm lỗi nào, để app xử lý theo nhóm thay vì đọc từng mã. Với các trạng thái còn lại, trường này là `null`.
-
-| Nhóm               | Phía gây ra                                  | Cách xử lý                                                                                           |
-| ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `system`           | XPay, SDK hoặc cấu hình merchant             | Thử lại. Nếu vẫn lỗi, không thu tiền mặt: tài xế liên hệ tổng đài XPay để được thanh toán hộ         |
-| `network`          | Kết nối mạng của thiết bị tài xế             | Khôi phục kết nối rồi thử lại. Không thu tiền mặt: nếu vẫn lỗi, tài xế liên hệ tổng đài XPay         |
-| `cardholderRetry`  | Khách quét, chạm hoặc nhập thẻ chưa đúng     | Cho khách thử lại cùng thẻ. Nếu vẫn lỗi, xử lý như `cardholderChange`                                |
-| `cardholderChange` | Thẻ không dùng được cho giao dịch            | Khách dùng thẻ hoặc phương thức khác, hoặc liên hệ tổng đài XPay                                     |
-| `corporatePolicy`  | Quy định của doanh nghiệp sở hữu thẻ hoặc ví | Tổng đài XPay làm việc với doanh nghiệp. Nếu doanh nghiệp không điều chỉnh, khách trả bằng cách khác |
-| `session`          | Phiên thanh toán, chuyến đi hoặc tích hợp    | Không thu bằng cách khác trước khi kiểm tra chuyến và giao dịch trên backend                         |
-| `unknown`          | Chưa phân loại                               | Xử lý như `system`                                                                                   |
-
-Danh sách mã theo từng nhóm và quy định xử lý chi tiết: [docs/failure_categories.vi.md](docs/failure_categories.vi.md).
-
-Về `message`:
-
-1. Câu thông báo đã được dịch theo `XPayConfig.language`, có thể hiển thị thẳng cho nhân viên.
-2. Khi XPay trả về một mã lỗi chưa có câu thông báo riêng, `message` kết thúc bằng một dòng `Mã lỗi:` (hoặc `Error code:` với tiếng Anh) để bộ phận hỗ trợ tra cứu.
-3. Ngoại lệ: lỗi mạng (`no_connection`, `no_host`, `timeout`) và phiên hết hạn (`token_expired`) hiện luôn trả `message` tiếng Anh. Xem [mục 17](#17-giới-hạn-hiện-tại).
+1. **Mở lại XPAY luôn dùng phiên mới.** Backend gọi lại `POST /merchant/rides/{order_id}/payment-session` (phiên cũ bị thu hồi), app truyền nguyên phản hồi mới vào `start`. Không giới hạn số lần mở lại.
+2. **Thanh toán bằng ví doanh nghiệp** thành công cũng là `paid`, nhưng `authId` và `captureId` là `null`, vì không có giao dịch thẻ. Xác nhận bằng `externalRef`.
+3. **`paid` với `paidBy = cs`**: tổng đài XPAY đã trả dùm, kể cả khi SDK phát hiện việc này lúc mở hoặc lúc tài xế đang thử lại. Không thu thêm của khách.
+4. **App không cần hiện popup lỗi thứ hai.** Tài xế đã thấy lý do, mã chuyến và số tổng đài trên popup của SDK.
+5. **Báo `payment-failure`**: mỗi lần tài xế ở lại màn thanh toán của app mà chưa thu được bằng XPay (`otherMethod`, `csPending`, hoặc `retryInPartner`, `cancelled`, `unavailable` mà không mở lại XPAY), server đối tác gọi `POST /merchant/rides/{order_id}/payment-failure` với `reason`, `auth_id`, `note` lấy từ `failure`. Thu tiền mặt thì gửi `reason: "paid_cash"` kèm `amount` **trước khi** nhận tiền. Không báo khi `paid`, `rideClosed`. Chi tiết: [mục 6 của failure_handling.vi.md](docs/failure_handling.vi.md#6-báo-payment-failure-từ-server).
 
 ## 10. Mã lỗi
 
-`errorCode` chỉ có giá trị khi `status` là `failed`.
+### `errorCode`: lỗi khi SDK không mở được
 
-### Mã do SDK sinh ra
+`errorCode` chỉ có giá trị khi `status` là `unavailable`.
 
-| Mã                        | Nguyên nhân                                                   | Cách xử lý                                            |
-| ------------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
-| `sdk_not_initialized`     | Gọi `start` trước khi `initialize` hoàn tất                   | `await` xong `initialize` rồi mới gọi `start`         |
-| `sdk_invalid_request`     | Request không qua được bước kiểm tra. Chưa gửi gì lên XPay    | Sửa dữ liệu theo [quy tắc](#quy-tắc-kiểm-tra-request) |
-| `sdk_busy`                | Gọi `start` khi một thanh toán khác chưa kết thúc             | Chờ lần trước trả kết quả                             |
-| `sdk_unexpected_response` | XPay trả trạng thái hoặc dữ liệu chip mà SDK không xử lý được | Kiểm tra với backend bằng `authId` nếu có, báo XPay   |
+| Mã                    | Nguyên nhân                                                | Cách xử lý                                            |
+| --------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| `sdk_not_initialized` | Gọi `start` trước khi `initialize` hoàn tất                | `await` xong `initialize` rồi mới gọi `start`         |
+| `sdk_busy`            | Gọi `start` khi một thanh toán khác chưa kết thúc          | Chờ lần trước trả kết quả                             |
+| `sdk_invalid_request` | Request không qua được bước kiểm tra. Chưa gửi gì lên XPay | Sửa dữ liệu theo [quy tắc](#quy-tắc-kiểm-tra-request) |
+| `sdk_unsupported`     | Không phương thức nào của phiên chạy được trên thiết bị    | Ẩn XPAY cho phiên này, để tài xế chọn cách khác       |
 
-### Mã từ tầng mạng
+### `failure.errorCode`: mã lỗi gốc của lần thất bại
 
-| Mã              | Nguyên nhân                                                                    |
-| --------------- | ------------------------------------------------------------------------------ |
-| `no_connection` | Không có kết nối mạng                                                          |
-| `no_host`       | Không kết nối được tới server (sai base URL, lỗi DNS, lỗi chứng chỉ)           |
-| `timeout`       | Server không phản hồi trong 30 giây                                            |
-| `token_expired` | Phiên thu tiền đã hết hạn. Xin session token mới từ backend rồi thanh toán lại |
+`failure.errorCode` giữ nguyên mã mà SDK dựa vào để chọn luồng, dùng để tra cứu và đối soát. App không cần rẽ nhánh theo mã này.
 
-### Mã từ XPay
+1. Mã từ chối của giao dịch (`decline_reason`), ví dụ `insufficient_funds`, `card_blocked`, `employee_policy_violation`.
+2. Mã lỗi API của XPay (`code`), ví dụ `ride_payment_session_revoked`, `corporate_wallet_refused`.
+3. Mã của tầng mạng: `no_connection`, `no_host`, `timeout`.
+4. Mã do SDK sinh ra: `sdk_session_amount_changed` (`fetchSession` trả phiên có cước khác), `sdk_unexpected_response` (XPay trả trạng thái SDK không xử lý được).
 
-Các giá trị `errorCode` khác được XPay trả về và SDK chuyển nguyên cho app. Danh sách mã do XPay cung cấp riêng. Các mã liên quan tới phiên thu tiền:
-
-| Mã                             | Nguyên nhân                                                                                | Cách xử lý                                                             |
-| ------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `amount_locked`                | `amount` khác số tiền đã khoá trong phiên (HTTP 422 ở bước authorize, 409 ở bước xác thực) | Truyền đúng `amount` của phiên, hoặc xin phiên mới với số tiền cần thu |
-| `ride_payment_session_revoked` | Phiên bị thu hồi vì backend đã mở phiên mới cho cùng chuyến                                | Dùng phiên mới nhất; tránh mở nhiều phiên song song cho một chuyến     |
-
-`message` của các mã này là câu thông báo chung kèm dòng `Mã lỗi:` (hoặc `Error code:`).
-
-Các mã ở bước authorize có câu thông báo riêng, `message` nêu rõ nguyên nhân thay vì câu chung:
-
-| Mã                        | Nguyên nhân                                                                                        | Cách xử lý                                             |
-| ------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `not_found`               | XPay không tìm thấy thẻ hoặc mã thanh toán đã quét, chạm hoặc nhập. `message` nêu theo phương thức | Kiểm tra lại thẻ hoặc mã rồi thử lại                   |
-| `no_registered_phone`     | Thẻ không có số điện thoại để gửi OTP                                                              | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
-| `static_code_unavailable` | Thẻ chưa được thiết lập mã PIN                                                                     | Dùng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp |
-| `otp_delivery_failed`     | Không gửi được OTP tới số điện thoại của chủ thẻ                                                   | Thử lại                                                |
-| `ride_card_not_found`     | Chuyến đi không còn được giao cho tài xế, hoặc không còn ở trạng thái thanh toán được              | Kiểm tra lại chuyến đi ở phía app                      |
-| `ride_already_paid`       | Chuyến đi đã có giao dịch thanh toán                                                               | Kiểm tra trạng thái chuyến trước khi thu lại           |
-
-### Mã kết thúc thanh toán bằng ví doanh nghiệp
-
-Các mã dưới đây kết thúc thanh toán ví với `failed`, mỗi mã có `message` riêng:
-
-| Mã                             | Nguyên nhân                                         | Cách xử lý                                   |
-| ------------------------------ | --------------------------------------------------- | -------------------------------------------- |
-| `amount_locked`                | XPay đã khoá số tiền khác cho chuyến sau khi gửi mã | Xin phiên mới rồi thanh toán lại             |
-| `ride_not_found`               | Chuyến đã đóng hoặc không còn mở để thanh toán      | Kiểm tra trạng thái chuyến trước khi thu lại |
-| `ride_not_on_corporate_wallet` | Chuyến không được đặt bằng ví doanh nghiệp          | Kiểm tra phương thức thanh toán của chuyến   |
-
-Các lỗi ví khác (mã sai, mã hết hạn, mã bị khoá, gửi mã quá nhiều lần, không gửi được mã, người nhận không có thông tin liên hệ, ví doanh nghiệp từ chối hoặc tạm gián đoạn) được báo ngay trên màn hình SDK và không kết thúc thanh toán.
+Bảng mã theo từng luồng: [mục 8 của failure_handling.vi.md](docs/failure_handling.vi.md#8-mã-lỗi-theo-luồng).
 
 ## 11. Thử lại và chống trừ tiền hai lần
 
-Mỗi yêu cầu authorize mang một idempotency key, để request gửi lại không bị trừ tiền hai lần.
+Mỗi yêu cầu authorize và xác thực mã của thẻ mang một idempotency key, để request gửi lại không bị trừ tiền hai lần.
 
-1. **Thử lại cùng một thanh toán**: gọi lại `start` với JSON của cùng phiên (hoặc phiên mới của cùng chuyến) và các trường khác giữ nguyên. Nếu khách đưa cùng thẻ, SDK dùng lại key cũ, và XPay trả lại kết quả ban đầu thay vì trừ tiền lần nữa. Điều này đúng giữa các lần gọi `start`, trong suốt thời gian process của app còn sống.
-2. **Thanh toán mới**: mỗi chuyến có `external_ref` riêng trong phản hồi của phiên.
-3. **Thẻ khác hoặc thông tin đơn thay đổi**: request khác đi nên SDK tạo key mới.
-4. **`duplicate`**: XPay đang giữ một request khác dưới cùng key. Có thể đã có giao dịch: kiểm tra trước khi thu tiền lại.
+1. **SDK tự gửi lại** request authorize hoặc xác thực thẻ khi lỗi tạm thời (timeout, mất kết nối, HTTP 5xx, `request_in_flight`), với cùng key và cùng body. XPay trả lại kết quả của request đầu nếu đã ghi nhận.
+2. **"Thử lại" trong SDK** (popup luồng A, hoặc "Thử lại với XPAY" ở màn 4.2): sau một lần bị từ chối, lần thử mới dùng key mới. Sau một lỗi hệ thống chưa rõ kết quả, nếu khách đưa lại cùng thẻ, SDK dùng lại key cũ để XPay trả kết quả cũ thay vì trừ lần nữa.
+3. **Mở lại XPAY từ app** (gọi `start` lần nữa) cho cùng chuyến: nếu khách đưa cùng thẻ và số tiền không đổi, SDK dùng lại key của lần trước, trong suốt thời gian process của app còn sống.
+4. **Thẻ khác hoặc số tiền khác**: request khác đi nên SDK tạo key mới. Chạm thẻ NFC luôn tạo key mới, vì mỗi lần chạm sinh ra một cryptogram mới.
+5. Session token không nằm trong idempotency key. Thử lại bằng một phiên mới vẫn dùng lại key cũ.
+6. Chuyến đã được trả (ví dụ tổng đài trả dùm trong lúc tài xế đang thử lại) thì XPay trả `ride_already_paid`, SDK chuyển sang màn 4 và trả `paid`, không trừ thẻ của khách lần nữa.
 
-Chạm thẻ NFC luôn tạo key mới, vì mỗi lần chạm sinh ra một cryptogram mới.
-
-Session token không nằm trong idempotency key. Thử lại bằng một phiên mới (sau khi phiên cũ hết hạn) vẫn dùng lại key cũ. Lưu ý mở phiên mới sẽ thu hồi phiên cũ ([mục 5](#5-xác-thực)).
-
-Gợi ý cho app:
-
-1. Sau một thanh toán **thất bại**, thử lại cho cùng chuyến; `external_ref` của chuyến không đổi nên lần thử lại dùng lại key.
-2. Sau một thanh toán **thành công**, chuyến đã đóng; chuyến tiếp theo dùng `external_ref` của phiên mới.
-
-Chuyến ví doanh nghiệp chỉ được trả một lần, bằng mã QR hoặc bằng mã gửi tới khách: trả xong thì XPay đóng chuyến, và lần gửi mã sau cho chuyến đó trả `ride_not_found`. Sau một kết quả ví `failed` hoặc `cancelled`, kiểm tra chuyến với backend trước khi thanh toán lại.
+Chuyến ví doanh nghiệp chỉ được trả một lần, bằng mã QR hoặc bằng mã gửi tới khách: trả xong thì XPay đóng chuyến, và lần mở sau SDK vào thẳng màn 4.
 
 ## 12. Xác nhận thanh toán từ backend
 
-Kết quả được trả về trên điện thoại của nhân viên, đây không phải nguồn đáng tin cậy. Trước khi hoàn tất đơn, backend của đối tác phải xác nhận thanh toán với XPay bằng `authId` hoặc `externalRef`.
+Kết quả được trả về trên điện thoại của nhân viên, đây không phải nguồn đáng tin cậy. Trước khi hoàn tất đơn, backend của đối tác phải xác nhận thanh toán với XPay bằng `externalRef` (hoặc `authId` với thanh toán thẻ).
 
-Xử lý tương tự với các kết quả `cancelled` và `failed` có `authId`: thanh toán đã được authorize và vẫn có thể hoàn tất hoặc hết hạn phía XPay.
-
-Thanh toán bằng ví doanh nghiệp không có `authId`: xác nhận bằng `externalRef`.
+1. `paid` với `paidBy = cs` cũng xác nhận bằng `externalRef`. `amount` là số XPay đã thu, có thể khác số đã khoá trong phiên.
+2. Thanh toán bằng ví doanh nghiệp không có `authId`: xác nhận bằng `externalRef`.
+3. `pendingAuthId`: giao dịch thẻ còn chờ mã. Void bằng `POST /merchant/payments/{auth_id}/void` từ server, hoặc để tự hết hạn sau khoảng 10 phút. Chưa void thì `paid_cash` bị từ chối với `409 ride_payment_pending`.
+4. Sau `csPending`, tổng đài vẫn có thể trả dùm. Server đối tác biết qua kênh xác nhận thanh toán đang dùng, hoặc qua `409 ride_already_paid` khi báo `paid_cash`.
 
 ## 13. Logging
 
@@ -523,6 +525,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `feature`          | `action`                                                 | `level` | Khi nào                                                                                                                                                                                                                                                       | `input` chính                                                                                      |
 | ------------------ | -------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `payment`          | `start_payment`                                          | `error` | Request bị từ chối trước khi mở màn hình (`sdk_invalid_request`). `reason`: `invalid_session_json`, `malformed_session`, `missing_session_token`, `missing_entry_modes`, `invalid_amount`, `amount_below_minimum`, `missing_currency`, `invalid_external_ref` | `session_json_length`                                                                              |
+| `payment`          | `checkout_failure`                                       | `warn`  | Thanh toán không thành công, SDK chọn luồng xử lý. `reason` là loại lỗi                                                                                                                                                                                       | `route`, `kind`, `error_code`, `auth_id`, `attempt`, `retry_in_sdk_count`                          |
 | `payment`          | `authorize_qr`, `authorize_manual`, `authorize_chip_tap` | `error` | Gọi authorize thất bại (lỗi mạng, lỗi từ XPay, xung đột)                                                                                                                                                                                                      | `entry_mode`, `amount`, `currency`, `external_ref`, `product_type`, `service_date`, `auto_capture` |
 | `payment`          | `authorize_approved`                                     | `info`  | XPay duyệt hoặc capture                                                                                                                                                                                                                                       | `entry_mode`, `auth_id`                                                                            |
 | `payment`          | `authorize_declined`                                     | `warn`  | XPay từ chối                                                                                                                                                                                                                                                  | `entry_mode`, `decline_reason`                                                                     |
@@ -533,6 +536,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `verification`     | `verify_approved`                                        | `info`  | Xác thực thành công                                                                                                                                                                                                                                           | `auth_id`                                                                                          |
 | `verification`     | `verify_rejected`                                        | `warn`  | Mã xác thực sai                                                                                                                                                                                                                                               | `auth_id`, `attempt`                                                                               |
 | `verification`     | `verify_declined`                                        | `warn`  | XPay từ chối sau bước xác thực                                                                                                                                                                                                                                | `auth_id`, `decline_reason`                                                                        |
+| `verification`     | `verify_not_pending`                                     | `warn`  | XPay báo giao dịch không còn chờ mã, SDK đọc lại kết quả của giao dịch                                                                                                                                                                                        | `auth_id`, `payment_status`, `decline_reason`                                                      |
 | `verification`     | `verification_expired`                                   | `error` | Hết thời gian xác thực                                                                                                                                                                                                                                        | `auth_id`                                                                                          |
 | `verification`     | `verification_abandon`                                   | `info`  | Nhân viên rời màn hình xác thực                                                                                                                                                                                                                               | `auth_id`                                                                                          |
 | `card_nfc`         | `prepare`, `sign`                                        | `error` | Gọi API chuẩn bị hoặc ký dữ liệu chip thất bại                                                                                                                                                                                                                | `chip_uid`, `counter`                                                                              |
@@ -547,7 +551,7 @@ Sự kiện **không bao giờ** chứa số thẻ, khoá chip, cryptogram, nonc
 | `corporate_wallet` | `intent_captured`                                        | `info`  | Khách đã trả qua mã QR                                                                                                                                                                                                                                        | `intent_id`                                                                                        |
 | `corporate_wallet` | `intent_ended`                                           | `warn`  | Mã QR kết thúc mà không được trả. `reason`: `declined`, `canceled`, `expired`                                                                                                                                                                                 | `intent_id`                                                                                        |
 
-Danh sách này phản ánh phiên bản `3.1126.1` và có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
+Danh sách này có thể được bổ sung ở các phiên bản sau. App không nên dựa vào việc một sự kiện cụ thể luôn xuất hiện để điều khiển luồng nghiệp vụ; hãy dùng `XPayPaymentResult`.
 
 Nếu `onLog` ném exception, SDK bỏ qua lỗi đó và tiếp tục thanh toán.
 
@@ -557,31 +561,32 @@ Phần này dành cho đội backend và hạ tầng của đối tác, ví dụ
 
 Đường dẫn tính từ `XPayEnvironment.baseUrl`:
 
-| Method | Endpoint                                               | Dùng khi                           | Header riêng      |
-| ------ | ------------------------------------------------------ | ---------------------------------- | ----------------- |
-| `POST` | `/merchant/payments/authorize`                         | Authorize thanh toán               | `Idempotency-Key` |
-| `POST` | `/merchant/payments/{authId}/verify`                   | Gửi mã OTP/PIN                     | `Idempotency-Key` |
-| `POST` | `/merchant/payments/{authId}/resend-verification`      | Gửi hoặc gửi lại mã xác thực       |                   |
-| `POST` | `/merchant/chip/tap/prepare`                           | Chuẩn bị đọc thẻ chip (NFC)        |                   |
-| `POST` | `/merchant/chip/tap/cryptogram`                        | Ký dữ liệu chip (NFC)              |                   |
-| `GET`  | `/merchant/wallet-payments/recipients`                 | Lấy danh sách người nhận mã của ví |                   |
-| `POST` | `/merchant/wallet-payments`                            | Gửi hoặc gửi lại mã thanh toán ví  |                   |
-| `POST` | `/merchant/wallet-payments/{wallet_payment_id}/verify` | Xác thực mã thanh toán ví          |                   |
-| `POST` | `/merchant/payment-intents`                            | Tạo mã QR thanh toán ví            | `Idempotency-Key` |
-| `GET`  | `/merchant/payment-intents/{intent_id}`                | Kiểm tra mã QR, mỗi 3 giây         |                   |
-| `POST` | `/merchant/payment-intents/{intent_id}/cancel`         | Huỷ mã QR khi nhân viên rời màn QR |                   |
+| Method | Endpoint                                               | Dùng khi                                                | Header riêng      |
+| ------ | ------------------------------------------------------ | ------------------------------------------------------- | ----------------- |
+| `GET`  | `/merchant/ride-payment`                               | Kiểm tra trạng thái chuyến khi mở, khi chờ tổng đài     |                   |
+| `POST` | `/merchant/payments/authorize`                         | Authorize thanh toán                                    | `Idempotency-Key` |
+| `GET`  | `/merchant/payments/{authId}`                          | Đọc lại kết quả giao dịch khi XPay báo không còn chờ mã |                   |
+| `POST` | `/merchant/payments/{authId}/verify`                   | Gửi mã OTP/PIN                                          | `Idempotency-Key` |
+| `POST` | `/merchant/payments/{authId}/resend-verification`      | Gửi hoặc gửi lại mã xác thực                            |                   |
+| `POST` | `/merchant/chip/tap/prepare`                           | Chuẩn bị đọc thẻ chip (NFC)                             |                   |
+| `POST` | `/merchant/chip/tap/cryptogram`                        | Ký dữ liệu chip (NFC)                                   |                   |
+| `GET`  | `/merchant/wallet-payments/recipients`                 | Lấy danh sách người nhận mã của ví                      |                   |
+| `POST` | `/merchant/wallet-payments`                            | Gửi hoặc gửi lại mã thanh toán ví                       |                   |
+| `POST` | `/merchant/wallet-payments/{wallet_payment_id}/verify` | Xác thực mã thanh toán ví                               |                   |
+| `POST` | `/merchant/payment-intents`                            | Tạo mã QR thanh toán ví                                 | `Idempotency-Key` |
+| `GET`  | `/merchant/payment-intents/{intent_id}`                | Kiểm tra mã QR, mỗi 3 giây                              |                   |
+| `POST` | `/merchant/payment-intents/{intent_id}/cancel`         | Huỷ mã QR khi nhân viên rời màn QR                      |                   |
 
 Hành vi chung:
 
-1. Mọi request mang header `X-Ride-Payment: <session token>` lấy từ `session_token` trong `XPayPaymentRequest.sessionJson`.
-2. Timeout kết nối và timeout nhận dữ liệu đều là 30 giây.
-3. HTTP 401: SDK không gửi lại request. Mã `session_expired` được trả về app thành `token_expired`; các mã khác chuyển nguyên.
-4. HTTP 429: nếu response có header `retry-after` không quá 3 giây, SDK chờ rồi gửi lại một lần; ngược lại trả lỗi.
-5. HTTP 409 ở bước authorize: kết quả là `duplicate`.
-6. HTTP 422 `amount_locked` ở bước authorize: kết quả là `failed` với `errorCode = amount_locked`.
-7. Khi kiểm tra mã QR: lỗi mạng và HTTP 5xx thì SDK kiểm tra lại sau 3 giây; HTTP 401 `session_expired` cho kết quả `expired`; các lỗi 4xx khác cho kết quả `failed`.
+1. Mọi request mang header `X-Ride-Payment: <session token>` lấy từ `session_token` trong `XPayPaymentRequest.sessionJson`, hoặc từ phiên mới do `fetchSession` trả về.
+2. Timeout kết nối và timeout nhận dữ liệu đều là 30 giây. `GET /merchant/ride-payment` có giới hạn 15 giây và không tự gửi lại.
+3. Timeout, mất kết nối, HTTP 5xx và `409 request_in_flight`: SDK tự gửi lại tối đa 3 lần (chờ 1, 2, 4 giây; `request_in_flight` chờ 500 ms), chỉ với request `GET` hoặc request có `Idempotency-Key`.
+4. HTTP 429: SDK chờ theo header `retry-after` (tối đa 3 giây), không có thì 1, 2, 4 giây, rồi gửi lại, tối đa 3 lần. `retry-after` lớn hơn 3 giây thì trả lỗi.
+5. HTTP 401 `ride_payment_session_expired`: SDK gọi `fetchSession` rồi gửi lại request một lần với phiên mới. Các mã 401 khác không gửi lại.
+6. Lỗi còn lại được SDK xử lý trên màn hình theo luồng, xem [failure_handling.vi.md](docs/failure_handling.vi.md).
 
-Đây là thông tin tham khảo của phiên bản `3.1126.1`. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
+Đây là thông tin tham khảo. Endpoint và header có thể thay đổi giữa các phiên bản SDK mà không cần app sửa code.
 
 ## 15. Bảo mật
 
@@ -620,7 +625,8 @@ App mẫu minh hoạ:
 
 1. Khởi tạo SDK với môi trường, ngôn ngữ và callback log.
 2. Bắt đầu thanh toán với JSON phiên và in ra `XPayPaymentResult`.
-3. Hiển thị các sự kiện từ `onLog`.
+3. Chọn `fetchSession` khi phiên hết hạn: trả JSON phiên mới dán sẵn, ném lỗi, treo, hoặc không truyền.
+4. Hiển thị các sự kiện từ `onLog`.
 
 Dùng điện thoại Android thật có NFC để thử chạm thẻ.
 
@@ -628,21 +634,20 @@ Dùng điện thoại Android thật có NFC để thử chạm thẻ.
 
 1. App Android và iOS native dùng bộ SDK trong tài liệu tích hợp native tương ứng, không dùng tài liệu này.
 2. Màn hình SDK dùng giao diện của XPay, chưa tuỳ biến theme được. Chữ dùng font `Inter` nếu app có bundle font này, ngược lại dùng font mặc định của app.
-3. SDK không hiển thị màn hình thành công hay bị từ chối. App tự hiển thị dựa trên kết quả.
+3. SDK hiện lỗi và các màn xử lý lỗi của mình, nhưng không thay màn thanh toán thành công của app. App tự hiển thị dựa trên kết quả.
 4. Trên Android, `chip_tap` được hiện khi máy có NFC. Máy có NFC nhưng chip NFC không đọc được thẻ MIFARE Classic chỉ bị phát hiện khi chạm thẻ.
 5. Các phương thức quét QR được hiện mà không kiểm tra máy có camera hay không. Nhân viên vẫn có thể chọn ảnh QR từ thư viện.
-6. Lỗi mạng (`no_connection`, `no_host`, `timeout`) và phiên hết hạn (`token_expired`) trả `message` tiếng Anh ở cả hai ngôn ngữ.
-7. Số tiền là số nguyên, phù hợp với VND. Chưa hỗ trợ tiền tệ có phần thập phân.
-8. Trong lúc XPay đang authorize sau khi quét QR hoặc chạm thẻ, màn hình phía sau lớp loading là màn chọn phương thức.
-9. Mã QR của ví doanh nghiệp được kiểm tra mỗi 3 giây, nên khoản trả qua QR có thể được báo về chậm tối đa 3 giây.
-10. Trên Android, SDK không có app bar riêng và chỉ thoát được bằng nút back của hệ thống. iOS không có nút back hệ thống, nên trên iOS màn chọn phương thức có nút quay lại ở góc trên bên trái; bấm vào thì huỷ thanh toán như nút back của Android.
+6. Số tiền là số nguyên, phù hợp với VND. Chưa hỗ trợ tiền tệ có phần thập phân.
+7. Trong lúc XPay đang authorize sau khi quét QR hoặc chạm thẻ, màn hình phía sau lớp loading là màn chọn phương thức.
+8. Mã QR của ví doanh nghiệp được kiểm tra mỗi 3 giây, nên khoản trả qua QR có thể được báo về chậm tối đa 3 giây.
+9. Trên Android, SDK không có app bar riêng và chỉ thoát được bằng nút back của hệ thống. iOS không có nút back hệ thống, nên trên iOS màn chọn phương thức có nút quay lại ở góc trên bên trái; bấm vào thì huỷ thanh toán như nút back của Android.
 
 ## 18. Câu hỏi thường gặp
 
-**`start` trả ngay `failed` với `sdk_not_initialized`.**
+**`start` trả ngay `unavailable` với `sdk_not_initialized`.**
 Chưa gọi `XPayPayment.initialize`, hoặc gọi nhưng chưa `await` xong.
 
-**`start` trả ngay `failed` với `sdk_invalid_request`.**
+**`start` trả ngay `unavailable` với `sdk_invalid_request`.**
 Kiểm tra lại request theo [quy tắc kiểm tra](#quy-tắc-kiểm-tra-request). Lỗi thường gặp: `sessionJson` không phải JSON object hoặc bị cắt bớt, thiếu `session_token`, `amount` có phần lẻ hoặc dưới 1.000, `external_ref` rỗng, mã số thuế sai định dạng.
 
 **Nút NFC luôn bị vô hiệu hoá.**
@@ -651,14 +656,17 @@ NFC chỉ hỗ trợ Android. Trên Android, kiểm tra máy có NFC và manifes
 **Màn hình quét QR báo không có quyền camera.**
 Kiểm tra `NSCameraUsageDescription` (iOS) hoặc quyền `CAMERA` (Android). Nếu người dùng đã từ chối vĩnh viễn, SDK hiển thị thông báo kèm nút mở cài đặt.
 
-**Thanh toán trả `failed` với `token_expired`.**
-Session token đã quá 15 phút hoặc không còn hiệu lực. SDK không tự refresh: xin phiên mới qua backend (`POST /merchant/rides/{order_id}/payment-session`, kèm `amount`, `fare`, `sub_fee`, `distance_km`) rồi gọi lại `start`. Nên xin phiên ngay trước khi thu tiền, không xin sẵn từ lúc nhận chuyến.
+**Phiên hết hạn giữa chừng, SDK hiện "Không mở được phiên thanh toán".**
+App chưa truyền `fetchSession`, hoặc `fetchSession` lỗi, quá 15 giây, hoặc trả phiên của chuyến khác. Kết quả là `retryInPartner` với `failure.errorCode = ride_payment_session_expired`: xin phiên mới rồi mở lại XPAY. Nên truyền `fetchSession`, xem [Gia hạn phiên](#gia-hạn-phiên-fetchsession).
 
-**Thanh toán trả `failed` với `amount_locked`.**
-JSON đưa vào SDK đã bị sửa `amount`, hoặc không phải phản hồi của phiên mới nhất. Truyền nguyên phản hồi của `payment-session`, hoặc xin phiên mới với số tiền cần thu.
+**SDK hiện "Cước đã được cập nhật", kết quả `retryInPartner` với `failure.note = cước đổi`.**
+Backend đã mở phiên mới cho chuyến với cước khác (`ride_payment_session_revoked`, `amount_locked`, hoặc `fetchSession` trả cước khác). Hiện lại số tiền mới cho tài xế rồi mở XPAY bằng phiên mới nhất.
 
-**Thanh toán trả `failed` với `ride_payment_session_revoked`.**
-Backend đã mở một phiên mới cho cùng chuyến nên phiên cũ bị thu hồi. Dùng phiên mới nhất, và tránh xin nhiều phiên cho một chuyến cùng lúc.
+**SDK hiện "Đã xảy ra lỗi khi xử lý thanh toán", `failure.note` là `amount_locked` hoặc `validation_failed`.**
+Lỗi tích hợp: JSON đưa vào SDK đã bị sửa, hoặc dữ liệu phiên không hợp lệ. Truyền nguyên phản hồi của `payment-session` mới nhất.
+
+**Mở XPAY mà SDK vào thẳng màn "Thanh toán thành công" hoặc "Chuyến đã huỷ".**
+Đúng như thiết kế: chuyến đã được trả (thường là tổng đài trả dùm), đã đóng hoặc đã huỷ. Kết quả là `paid` hoặc `rideClosed`; không thu thêm.
 
 **Thanh toán ví doanh nghiệp thành công nhưng `authId` là `null`.**
 Đúng như thiết kế: thanh toán ví không tạo giao dịch thẻ. Xác nhận với backend bằng `externalRef`.
@@ -667,7 +675,7 @@ Backend đã mở một phiên mới cho cùng chuyến nên phiên cũ bị thu
 XPay không có số điện thoại hay email nào của người đặt chuyến và người đi cùng, hoặc không tải được danh sách (màn hình báo lỗi kèm nút thử lại). Vẫn thu được bằng mã QR.
 
 **Có cần hiển thị màn hình kết quả không?**
-Có. SDK chỉ trả `XPayPaymentResult`, app tự hiển thị thành công hoặc thất bại.
+Có với thanh toán thành công: app hiện màn thành công của mình khi nhận `paid`. Với lỗi thì không: SDK đã hiện lý do và hướng dẫn tài xế, app chỉ cần đưa tài xế về màn thanh toán.
 
 **Có thể gọi thẳng API XPay thay vì dùng SDK không?**
 Không nên. Luồng chạm thẻ NFC và chống trừ tiền hai lần phụ thuộc vào logic bên trong SDK, và việc tự xử lý số thẻ trong app làm tăng phạm vi PCI-DSS của đối tác.

@@ -67,6 +67,10 @@ final class $XPLocaleENPaymentWallet implements $XPLocaleBasePaymentWallet {
   @override
   String get otpLockedBody => 'The code was locked after too many incorrect attempts. Please resend a new code.';
   @override
+  String get otpNotPendingTitle => 'Code no longer valid';
+  @override
+  String get otpNotPendingBody => 'This code can no longer be used. Please resend a new code.';
+  @override
   String get otpVelocityExceededTitle => 'Too many codes requested';
   @override
   String get otpVelocityExceededBody => 'Too many codes were requested in a short time. Please try again in a few minutes or use the QR code.';

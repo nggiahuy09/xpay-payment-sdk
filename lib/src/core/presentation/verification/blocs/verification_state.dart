@@ -226,6 +226,16 @@ final class VerificationSessionExpiredState extends VerificationState {
   const VerificationSessionExpiredState({required super.verification, required super.amount, required super.code}) : super(isSessionOver: true);
 }
 
+final class VerificationFailedState extends VerificationState {
+  const VerificationFailedState({required super.verification, required super.amount, required super.code, this.errorCode, required this.isConflict}) : super(isSessionOver: true);
+
+  final String? errorCode;
+  final bool isConflict;
+
+  @override
+  List<Object?> get props => [...super.props, errorCode, isConflict];
+}
+
 final class VerificationErrorState extends VerificationState {
   const VerificationErrorState({
     required super.verification,

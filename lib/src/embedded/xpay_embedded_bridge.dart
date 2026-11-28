@@ -45,7 +45,7 @@ final class XPayEmbeddedBridge extends NavigatorObserver implements XPayEmbedded
       }
 
       _runningGeneration ??= generation;
-      final result = await XPayPayment.start(context, request.toRequest());
+      final result = await XPayPayment.start(context, request.toRequest(_hostApi));
       return result.toMessage();
     } finally {
       _pendingGenerations.remove(generation);

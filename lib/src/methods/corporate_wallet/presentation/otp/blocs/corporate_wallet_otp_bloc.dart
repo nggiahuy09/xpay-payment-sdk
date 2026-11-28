@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '../../../../../api/xpay_log_event.dart';
+import '../../../../../base/domain/domain.dart';
 import '../../../../../base/extensions/extensions.dart';
 import '../../../../../core/domain/entities/payment_authorize_entity.dart';
 import '../../../../../di/di.dart';
@@ -42,6 +44,10 @@ final class CorporateWalletOtpBloc extends Bloc<CorporateWalletOtpEvent, Corpora
   final _requestOtp = RequestCorporateWalletOtpUseCase(getIt.get<CorporateWalletRepository>());
   final _verifyOtp = VerifyCorporateWalletOtpUseCase(getIt.get<CorporateWalletRepository>());
 
+  static const int _kUnavailableRetryLimit = 2;
+
+  static const Duration _kUnavailableRetryDelay = Duration(seconds: 1);
+
   bool _isSending = false;
   bool _isVerifying = false;
 
@@ -74,7 +80,13 @@ final class CorporateWalletOtpBloc extends Bloc<CorporateWalletOtpEvent, Corpora
     );
 
     final input = VerifyCorporateWalletOtpInput(walletPaymentId: state.challenge.walletPaymentId, code: state.code);
-    final result = await _verifyOtp.execute(input);
+    var result = await _verifyOtp.execute(input);
+    var unavailableRetries = 0;
+    while (_isWalletUnavailable(result) && unavailableRetries < _kUnavailableRetryLimit && isClosed == false) {
+      unavailableRetries++;
+      await Future<void>.delayed(_kUnavailableRetryDelay);
+      result = await _verifyOtp.execute(input);
+    }
     _isVerifying = false;
     if (isClosed) return;
 
@@ -109,6 +121,7 @@ final class CorporateWalletOtpBloc extends Bloc<CorporateWalletOtpEvent, Corpora
             reason: reason,
             errorCode: failure.errorCode,
             errorMessage: failure.displayMessage,
+            isConflict: failure.isConflict,
           ),
         );
       },
@@ -117,6 +130,11 @@ final class CorporateWalletOtpBloc extends Bloc<CorporateWalletOtpEvent, Corpora
         emit(CorporateWalletOtpVerifiedState(channels: state.channels, challenge: state.challenge, code: state.code, payment: payment));
       },
     );
+  }
+
+  bool _isWalletUnavailable(Either<XPException, CorporateWalletPaymentEntity> result) {
+    final failure = result.getLeftOrNull();
+    return failure != null && CorporateWalletFailureReason.fromException(failure) == CorporateWalletFailureReason.walletUnavailable;
   }
 
   void _codeExpiredHandler(CorporateWalletOtpCodeExpiredEvent event, Emitter<CorporateWalletOtpState> emit) {

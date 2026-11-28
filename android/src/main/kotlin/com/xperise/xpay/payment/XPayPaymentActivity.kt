@@ -15,7 +15,7 @@ internal class XPayPaymentActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         activeActivity = this
 
-        if (getCachedEngineId() == null) return deliver(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.RESULT_LOST, failureCategory = XPayFailureCategory.SESSION))
+        if (getCachedEngineId() == null) return deliver(XPayPaymentResult.unavailable(XPayErrorCode.RESULT_LOST))
 
         if (savedInstanceState != null) {
             pendingResult?.let { result ->
@@ -26,7 +26,7 @@ internal class XPayPaymentActivity : FlutterActivity() {
         }
 
         pendingResult = null
-        val checkout = XPayPaymentIntents.readCheckout(intent) ?: return deliver(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.INVALID_REQUEST, failureCategory = XPayFailureCategory.SESSION))
+        val checkout = XPayPaymentIntents.readCheckout(intent) ?: return deliver(XPayPaymentResult.unavailable(XPayErrorCode.INVALID_REQUEST))
         XPayPayment.startPayment(checkout) { result -> finishPayment(result) }
     }
 

@@ -18,6 +18,7 @@ final class PaymentVerificationPage extends StatelessWidget {
     this.initialRecipientId,
     this.sessionExpiredExitLabel,
     required this.onSessionExpiredExit,
+    required this.onFailed,
   });
 
   final PaymentAuthorizeVerificationEntity verification;
@@ -26,6 +27,7 @@ final class PaymentVerificationPage extends StatelessWidget {
   final String? initialRecipientId;
   final String? sessionExpiredExitLabel;
   final void Function() onSessionExpiredExit;
+  final void Function(String? errorCode, bool isConflict) onFailed;
 
   static bool _shouldConfirmAbandon(VerificationState state) => switch (state) {
     VerificationSubmitLoadingState _ => false,
@@ -34,6 +36,7 @@ final class PaymentVerificationPage extends StatelessWidget {
     VerificationSessionExpiredState _ => false,
     VerificationApprovedState _ => false,
     VerificationDeclinedState _ => false,
+    VerificationFailedState _ => false,
     _ => true,
   };
 
@@ -55,34 +58,40 @@ final class PaymentVerificationPage extends StatelessWidget {
 
     return BlocProvider<VerificationBloc>(
       create: (_) => VerificationBloc(verification: verification, amount: amount, authId: authId, initialRecipientId: initialRecipientId),
-      child: BlocSelector<VerificationBloc, VerificationState, bool>(
-        selector: _shouldConfirmAbandon,
-        builder: (blocContext, shouldConfirmAbandon) => PopScope(
-          canPop: !shouldConfirmAbandon,
-          onPopInvokedWithResult: (didPop, _) {
-            if (didPop) return;
-            _handleConfirmAbandon(blocContext);
-          },
-          child: switch (verification.method) {
-            PaymentAuthorizeVerificationMethod.smsOtp => VerificationOtpView(sessionExpiredExitLabel: sessionExpiredExitLabel, onSessionExpiredExit: onSessionExpiredExit),
-            PaymentAuthorizeVerificationMethod.staticCode => VerificationPinView(
-              body: viewLocale.pinBody,
-              heading: viewLocale.pinHeading,
-              note: viewLocale.verificationStaticCodeSuccessNote,
-              sessionExpiredExitLabel: sessionExpiredExitLabel,
-              codeLength: VerificationState.maxStaticCodeLength,
-              onSessionExpiredExit: onSessionExpiredExit,
-            ),
-            PaymentAuthorizeVerificationMethod.tokenPin => VerificationPinView(
-              body: viewLocale.tokenPinBody,
-              heading: viewLocale.tokenPinHeading,
-              note: viewLocale.verificationTokenPinSuccessNote,
-              sessionExpiredExitLabel: sessionExpiredExitLabel,
-              codeLength: VerificationState.tokenPinLength,
-              onSessionExpiredExit: onSessionExpiredExit,
-            ),
-            PaymentAuthorizeVerificationMethod.unknown => const SizedBox.shrink(),
-          },
+      child: BlocListener<VerificationBloc, VerificationState>(
+        listenWhen: (_, next) => next is VerificationFailedState,
+        listener: (_, state) {
+          if (state is VerificationFailedState) onFailed.call(state.errorCode, state.isConflict);
+        },
+        child: BlocSelector<VerificationBloc, VerificationState, bool>(
+          selector: _shouldConfirmAbandon,
+          builder: (blocContext, shouldConfirmAbandon) => PopScope(
+            canPop: !shouldConfirmAbandon,
+            onPopInvokedWithResult: (didPop, _) {
+              if (didPop) return;
+              _handleConfirmAbandon(blocContext);
+            },
+            child: switch (verification.method) {
+              PaymentAuthorizeVerificationMethod.smsOtp => VerificationOtpView(sessionExpiredExitLabel: sessionExpiredExitLabel, onSessionExpiredExit: onSessionExpiredExit),
+              PaymentAuthorizeVerificationMethod.staticCode => VerificationPinView(
+                body: viewLocale.pinBody,
+                heading: viewLocale.pinHeading,
+                note: viewLocale.verificationStaticCodeSuccessNote,
+                sessionExpiredExitLabel: sessionExpiredExitLabel,
+                codeLength: VerificationState.maxStaticCodeLength,
+                onSessionExpiredExit: onSessionExpiredExit,
+              ),
+              PaymentAuthorizeVerificationMethod.tokenPin => VerificationPinView(
+                body: viewLocale.tokenPinBody,
+                heading: viewLocale.tokenPinHeading,
+                note: viewLocale.verificationTokenPinSuccessNote,
+                sessionExpiredExitLabel: sessionExpiredExitLabel,
+                codeLength: VerificationState.tokenPinLength,
+                onSessionExpiredExit: onSessionExpiredExit,
+              ),
+              PaymentAuthorizeVerificationMethod.unknown => const SizedBox.shrink(),
+            },
+          ),
         ),
       ),
     );

@@ -2,13 +2,16 @@ import 'dart:convert';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart';
 
 import '../../../../api/xpay_log_event.dart';
+import '../../../../base/domain/domain.dart';
+import '../../../../base/extensions/extensions.dart';
 import '../../../../di/di.dart';
 import '../../../../shared/business_logger/xp_business_logger.dart';
-import '../../../domain/entities/create_payment_authorize_failure_reason_enum.dart';
 import '../../../domain/entities/payment_authorize_entity.dart';
 import '../../../domain/entities/payment_chip_tap_entity.dart';
+import '../../../domain/entities/payment_decline_reason.dart';
 import '../../../domain/entities/payment_entry_mode_enum.dart';
 import '../../../domain/entities/payment_order_entity.dart';
 import '../../../domain/entities/xpay_qr_prefix.dart';
@@ -33,6 +36,12 @@ final class XPayPaymentBloc extends Bloc<XPayPaymentEvent, XPayPaymentState> {
   final _logger = getIt.get<XPBusinessLogger>();
 
   final PaymentOrderEntity _order;
+
+  static const int _kInFlightRetryLimit = 3;
+
+  static const Duration _kInFlightRetryDelay = Duration(milliseconds: 500);
+
+  static const String _kRequestInFlightCode = 'request_in_flight';
 
   int _authorizeAttempt = 0;
 
@@ -66,7 +75,13 @@ final class XPayPaymentBloc extends Bloc<XPayPaymentEvent, XPayPaymentState> {
       serviceDate: order.serviceDate,
       autoCapture: entryMode.autoCapture,
     );
-    final result = await _authorizePayment.execute(input);
+    var result = await _authorizePayment.execute(input);
+    var inFlightRetries = 0;
+    while (_isServicePaymentInFlight(result) && inFlightRetries < _kInFlightRetryLimit && isClosed == false) {
+      inFlightRetries++;
+      await Future<void>.delayed(_kInFlightRetryDelay);
+      result = await _authorizePayment.execute(input);
+    }
     _isAuthorizing = false;
     if (isClosed) return;
 
@@ -74,12 +89,12 @@ final class XPayPaymentBloc extends Bloc<XPayPaymentEvent, XPayPaymentState> {
       (failure) {
         _logger.logBusiness(input: input.toLog(), exception: failure, action: action, feature: 'payment');
         if (failure.isConflict) {
-          _idempotency.release();
-          emit(XPayPaymentAuthorizeConflictState(_authorizeAttempt));
+          if (failure.errorCode != _kRequestInFlightCode) _idempotency.release();
+          emit(XPayPaymentAuthorizeConflictState(errorCode: failure.errorCode, attempt: _authorizeAttempt));
           return;
         }
 
-        emit(XPayPaymentAuthorizeErrorState(entryMode: entryMode, displayMessage: failure.displayMessage, errorCode: failure.errorCode, attempt: _authorizeAttempt));
+        emit(XPayPaymentAuthorizeErrorState(errorCode: failure.errorCode, attempt: _authorizeAttempt));
       },
       (authorize) {
         _logAuthorizeOutcome(authorize, entryMode);
@@ -87,6 +102,8 @@ final class XPayPaymentBloc extends Bloc<XPayPaymentEvent, XPayPaymentState> {
       },
     );
   }
+
+  bool _isServicePaymentInFlight(Either<XPException, PaymentAuthorizeEntity> result) => result.getOrNull()?.declineReason?.reason == PaymentDeclineReason.servicePaymentInFlight;
 
   void _logAuthorizeOutcome(PaymentAuthorizeEntity authorize, PaymentEntryMode entryMode) {
     final String action;

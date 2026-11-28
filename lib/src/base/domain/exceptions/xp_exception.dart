@@ -51,20 +51,6 @@ final class XPNetworkException extends XPException {
   bool get isNetworkError => true;
 }
 
-/// HTTP 401 — token invalid or expired.
-final class XPUnauthorizedException extends XPException {
-  const XPUnauthorizedException({super.details, super.error, super.displayMessage, super.displayTitle, super.errorCode});
-
-  const XPUnauthorizedException.tokenExpired({super.error})
-    : super(displayMessage: 'Your session has expired. Please sign in again.', displayTitle: 'Sign in required', errorCode: 'token_expired');
-
-  const XPUnauthorizedException.tokenNotFound({super.error})
-    : super(displayMessage: 'Your session is unavailable. Please sign in again.', displayTitle: 'Sign in required', errorCode: 'token_not_found');
-
-  @override
-  bool get isSessionRejected => true;
-}
-
 /// HTTP 409 — the request conflicts with one the server already holds.
 ///
 /// Reached above all through `Idempotency-Key`: every idempotent endpoint answers a reused key carrying a *different* body with 409 instead of replaying the

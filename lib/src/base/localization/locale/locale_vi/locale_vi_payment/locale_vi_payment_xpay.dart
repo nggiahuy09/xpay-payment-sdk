@@ -74,33 +74,9 @@ final class $XPLocaleVIPaymentXpay implements $XPLocaleBasePaymentXpay {
 
   @override
   String get paymentDuplicateRequestTitle => 'Yêu cầu trùng lặp';
-  @override
-  String get paymentDuplicateRequestBody => 'Yêu cầu này trùng với một giao dịch vừa được gửi. Vui lòng kiểm tra danh sách giao dịch trước khi tạo giao dịch mới.';
-
-  @override
-  String get paymentTokenNotFoundBody => 'Mã thanh toán không tồn tại. Vui lòng yêu cầu khách mở lại mã QR trong ứng dụng.';
-  @override
-  String get paymentManualPanNotFoundBody => 'Thông tin thẻ đã nhập không tồn tại. Vui lòng kiểm tra lại và nhập đúng số thẻ.';
-  @override
-  String get paymentCardQrNotFoundBody => 'Không có thẻ nào khớp với mã QR này. Vui lòng quét lại mã QR in trên thẻ.';
-  @override
-  String get paymentChipTapNotFoundBody => 'Không nhận diện được thẻ đã chạm. Vui lòng sử dụng đúng thẻ được cung cấp bởi XPERISE.';
-  @override
-  String get paymentRideCardNotFoundBody => 'Chuyến đi này không còn được giao cho bạn hoặc không còn ở trạng thái có thể thanh toán. Vui lòng kiểm tra lại chuyến đi.';
-
-  @override
-  String get paymentNoRegisteredPhoneBody => 'Không tìm thấy số điện thoại để gửi mã OTP hoàn tất thanh toán. Vui lòng sử dụng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp.';
-  @override
-  String get paymentStaticCodeUnavailableBody => 'Thẻ này chưa được thiết lập mã PIN để hoàn tất thanh toán. Vui lòng sử dụng thẻ khác, hoặc liên hệ quản trị viên doanh nghiệp.';
-  @override
-  String get paymentOtpDeliveryFailedBody => 'Gửi mã OTP đến số điện thoại của chủ thẻ không thành công. Vui lòng thử lại.';
-  @override
-  String get paymentRideAlreadyPaidBody => 'Chuyến đi này đã có giao dịch thanh toán. Vui lòng kiểm tra lại trạng thái chuyến đi.';
 
   @override
   String get paymentDeclinedTitle => 'Thanh toán không thành công';
-  @override
-  String get paymentDeclinedBody => 'Giao dịch đã được ghi nhận nhưng thanh toán chưa hoàn tất.';
 
   @override
   String get paymentNotProcessedTitle => 'Không thể xử lý thanh toán';

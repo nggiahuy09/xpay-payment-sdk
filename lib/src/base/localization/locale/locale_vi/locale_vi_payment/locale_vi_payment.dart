@@ -6,6 +6,8 @@ final class $XPLocaleVIPayment implements $XPLocaleBasePayment {
   @override
   $XPLocaleBasePaymentCreate get create => const $XPLocaleVIPaymentCreate();
   @override
+  $XPLocaleBasePaymentOutcome get outcome => const $XPLocaleVIPaymentOutcome();
+  @override
   $XPLocaleBasePaymentVerification get verification => const $XPLocaleVIPaymentVerification();
   @override
   $XPLocaleBasePaymentWallet get wallet => const $XPLocaleVIPaymentWallet();

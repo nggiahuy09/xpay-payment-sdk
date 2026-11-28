@@ -12,21 +12,21 @@ extension XPayEmbeddedLanguageMapper on XPayEmbeddedLanguage {
 }
 
 extension XPayEmbeddedRequestMessageMapper on XPayEmbeddedRequestMessage {
-  XPayPaymentRequest toRequest() => XPayPaymentRequest.fromSession(sessionJson);
+  XPayPaymentRequest toRequest(XPayEmbeddedHostApi hostApi) => XPayPaymentRequest.fromSession(sessionJson, canFetchSession ? hostApi.fetchSession : null);
 }
 
 extension XPayPaymentResultMessageMapper on XPayPaymentResult {
   XPayEmbeddedResultMessage toMessage() => XPayEmbeddedResultMessage(
-    failureCategory: failureCategory?._toMessage(),
+    failure: failure?._toMessage(),
+    paidBy: paidBy?._toMessage(),
+    rideStatus: rideStatus?._toMessage(),
     status: status._toMessage(),
     authId: authId,
-    bookingRef: bookingRef,
     captureId: captureId,
     currency: currency,
-    declineCode: declineCode,
     errorCode: errorCode,
     externalRef: externalRef,
-    message: message,
+    pendingAuthId: pendingAuthId,
     amount: amount,
     createdAtEpochMillis: createdAt?.millisecondsSinceEpoch,
   );
@@ -45,28 +45,41 @@ extension XPayLogEventMessageMapper on XPayLogEvent {
   );
 }
 
-extension on XPayPaymentStatus {
-  XPayEmbeddedPaymentStatus _toMessage() => switch (this) {
-    XPayPaymentStatus.approved => XPayEmbeddedPaymentStatus.approved,
-    XPayPaymentStatus.captured => XPayEmbeddedPaymentStatus.captured,
-    XPayPaymentStatus.declined => XPayEmbeddedPaymentStatus.declined,
-    XPayPaymentStatus.cancelled => XPayEmbeddedPaymentStatus.cancelled,
-    XPayPaymentStatus.duplicate => XPayEmbeddedPaymentStatus.duplicate,
-    XPayPaymentStatus.failed => XPayEmbeddedPaymentStatus.failed,
-    XPayPaymentStatus.expired => XPayEmbeddedPaymentStatus.expired,
-    XPayPaymentStatus.unsupported => XPayEmbeddedPaymentStatus.unsupported,
+extension on XPayPaymentFailure {
+  XPayEmbeddedFailureMessage _toMessage() => XPayEmbeddedFailureMessage(reason: reason._toMessage(), authId: authId, errorCode: errorCode, note: note);
+}
+
+extension on XPayFailureReason {
+  XPayEmbeddedFailureReason _toMessage() => switch (this) {
+    XPayFailureReason.paymentDeclined => XPayEmbeddedFailureReason.paymentDeclined,
+    XPayFailureReason.sdkError => XPayEmbeddedFailureReason.sdkError,
+    XPayFailureReason.other => XPayEmbeddedFailureReason.other,
   };
 }
 
-extension on XPayFailureCategory {
-  XPayEmbeddedFailureCategory _toMessage() => switch (this) {
-    XPayFailureCategory.system => XPayEmbeddedFailureCategory.system,
-    XPayFailureCategory.network => XPayEmbeddedFailureCategory.network,
-    XPayFailureCategory.cardholderRetry => XPayEmbeddedFailureCategory.cardholderRetry,
-    XPayFailureCategory.cardholderChange => XPayEmbeddedFailureCategory.cardholderChange,
-    XPayFailureCategory.corporatePolicy => XPayEmbeddedFailureCategory.corporatePolicy,
-    XPayFailureCategory.session => XPayEmbeddedFailureCategory.session,
-    XPayFailureCategory.unknown => XPayEmbeddedFailureCategory.unknown,
+extension on XPayPaidBy {
+  XPayEmbeddedPaidBy _toMessage() => switch (this) {
+    XPayPaidBy.partner => XPayEmbeddedPaidBy.partner,
+    XPayPaidBy.cs => XPayEmbeddedPaidBy.cs,
+  };
+}
+
+extension on XPayRideStatus {
+  XPayEmbeddedRideStatus _toMessage() => switch (this) {
+    XPayRideStatus.completed => XPayEmbeddedRideStatus.completed,
+    XPayRideStatus.cancelled => XPayEmbeddedRideStatus.cancelled,
+  };
+}
+
+extension on XPayPaymentStatus {
+  XPayEmbeddedPaymentStatus _toMessage() => switch (this) {
+    XPayPaymentStatus.paid => XPayEmbeddedPaymentStatus.paid,
+    XPayPaymentStatus.retryInPartner => XPayEmbeddedPaymentStatus.retryInPartner,
+    XPayPaymentStatus.otherMethod => XPayEmbeddedPaymentStatus.otherMethod,
+    XPayPaymentStatus.csPending => XPayEmbeddedPaymentStatus.csPending,
+    XPayPaymentStatus.rideClosed => XPayEmbeddedPaymentStatus.rideClosed,
+    XPayPaymentStatus.cancelled => XPayEmbeddedPaymentStatus.cancelled,
+    XPayPaymentStatus.unavailable => XPayEmbeddedPaymentStatus.unavailable,
   };
 }
 

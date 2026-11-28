@@ -79,4 +79,7 @@ final class RecordingAuthorizeRepository extends PaymentAuthorizeRepository {
 
   @override
   Future<Either<XPException, PaymentVerifyEntity>> resendVerification({required String authId, String? recipientId}) async => throw UnimplementedError();
+
+  @override
+  Future<Either<XPException, PaymentVerifyEntity>> getPayment(String authId) async => throw UnimplementedError();
 }

@@ -1,19 +1,27 @@
 /// Forwards a host cancellation (the app closed the SDK screens) to the open payment flow, which decides how it ends.
 final class PaymentHostCancellation {
-  void Function()? _onCancel;
+  final List<void Function()> _handlers = [];
 
-  void attach(void Function() onCancel) => _onCancel = onCancel;
+  /// Whether the app closed the SDK screens during the open payment, so an outcome a screen still reports afterwards ends the flow instead of showing more screens.
+  bool get isRequested => _isRequested;
+  bool _isRequested = false;
 
-  void detach(void Function() onCancel) {
-    if (_onCancel == onCancel) _onCancel = null;
-  }
+  /// The latest attached handler takes the cancellation, so a screen nested in the flow handles it before the flow around it.
+  void attach(void Function() onCancel) => _handlers
+    ..remove(onCancel)
+    ..add(onCancel);
+
+  void detach(void Function() onCancel) => _handlers.remove(onCancel);
 
   /// Returns `false` when no payment flow is open.
   bool request() {
-    final onCancel = _onCancel;
-    if (onCancel == null) return false;
+    if (_handlers.isEmpty) return false;
 
-    onCancel.call();
+    _isRequested = true;
+    _handlers.last.call();
     return true;
   }
+
+  /// Clears [isRequested] for a new payment.
+  void reset() => _isRequested = false;
 }

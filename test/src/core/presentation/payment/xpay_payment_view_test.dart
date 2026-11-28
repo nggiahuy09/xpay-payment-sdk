@@ -49,14 +49,19 @@ Future<_OutcomeRecorder> _openMethodList(WidgetTester tester) async {
     MaterialApp(
       home: Builder(
         builder: (context) => TextButton(
-          onPressed: () async {
-            recorder.outcome = await Navigator.of(context).push(
-              MaterialPageRoute<PaymentFlowOutcomeEntity>(
-                builder: (_) => const XPayPaymentPage(entryModes: [PaymentEntryMode.manualPan], session: _session),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => XPayPaymentPage(
+                entryModes: const [PaymentEntryMode.manualPan],
+                session: _session,
+                method: PaymentMethod.card,
+                onOutcome: (outcome) {
+                  recorder.outcome = outcome;
+                  recorder.isCompleted = true;
+                },
               ),
-            );
-            recorder.isCompleted = true;
-          },
+            ),
+          ),
           child: const Text('pay'),
         ),
       ),
@@ -128,7 +133,7 @@ void main() {
     expect(recorder.isCompleted, isTrue);
     expect(
       recorder.outcome,
-      isA<PaymentFlowAuthorizedOutcomeEntity>().having((o) => o.authorize.authId, 'authId', 'auth-1').having((o) => o.entryMode, 'entryMode', PaymentEntryMode.manualPan),
+      isA<PaymentFlowAuthorizedOutcomeEntity>().having((o) => o.authorize.authId, 'authId', 'auth-1'),
     );
     expect(_repository.cardTokens.single, '4111111111111111');
   });
@@ -141,7 +146,7 @@ void main() {
 
     expect(
       recorder.outcome,
-      isA<PaymentFlowAuthorizeFailedOutcomeEntity>().having((o) => o.errorCode, 'errorCode', 'internal_error').having((o) => o.entryMode, 'entryMode', PaymentEntryMode.manualPan),
+      isA<PaymentFlowFailedOutcomeEntity>().having((o) => o.errorCode, 'errorCode', 'internal_error'),
     );
   });
 

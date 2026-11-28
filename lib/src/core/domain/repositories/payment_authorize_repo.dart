@@ -35,4 +35,6 @@ abstract class PaymentAuthorizeRepository {
   /// Takes no idempotency key: unlike [verify], a repeat call must issue a genuinely new code rather than replay the previous send. The server's cooldown and
   /// per-sale cap bound the repeats instead.
   Future<Either<XPException, PaymentVerifyEntity>> resendVerification({required String authId, String? recipientId});
+
+  Future<Either<XPException, PaymentVerifyEntity>> getPayment(String authId);
 }

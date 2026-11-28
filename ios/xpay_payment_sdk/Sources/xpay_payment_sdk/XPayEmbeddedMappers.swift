@@ -8,7 +8,7 @@ extension XPayConfig {
 
 extension XPayCheckout {
     func toMessage() -> XPayEmbeddedRequestMessage {
-        return XPayEmbeddedRequestMessage(sessionJson: sessionJson)
+        return XPayEmbeddedRequestMessage(sessionJson: sessionJson, canFetchSession: fetchSession != nil)
     }
 }
 
@@ -16,17 +16,17 @@ extension XPayEmbeddedResultMessage {
     func toResult() -> XPayPaymentResult {
         return XPayPaymentResult(
             status: status.toStatus(),
+            failure: failure?.toFailure(),
+            paidBy: paidBy?.toPaidBy(),
+            rideStatus: rideStatus?.toRideStatus(),
             authId: authId,
-            bookingRef: bookingRef,
             captureId: captureId,
             currency: currency,
-            declineCode: declineCode,
             errorCode: errorCode,
             externalRef: externalRef,
-            message: message,
+            pendingAuthId: pendingAuthId,
             amount: amount,
-            createdAt: createdAtEpochMillis.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000.0) },
-            failureCategory: failureCategory?.toCategory()
+            createdAt: createdAtEpochMillis.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000.0) }
         )
     }
 }
@@ -58,28 +58,47 @@ private extension XPayLanguage {
 private extension XPayEmbeddedPaymentStatus {
     func toStatus() -> XPayPaymentStatus {
         switch self {
-        case .approved: return .approved
-        case .captured: return .captured
-        case .declined: return .declined
+        case .paid: return .paid
+        case .retryInPartner: return .retryInPartner
+        case .otherMethod: return .otherMethod
+        case .csPending: return .csPending
+        case .rideClosed: return .rideClosed
         case .cancelled: return .cancelled
-        case .duplicate: return .duplicate
-        case .failed: return .failed
-        case .expired: return .expired
-        case .unsupported: return .unsupported
+        case .unavailable: return .unavailable
         }
     }
 }
 
-private extension XPayEmbeddedFailureCategory {
-    func toCategory() -> XPayFailureCategory {
+private extension XPayEmbeddedFailureMessage {
+    func toFailure() -> XPayPaymentFailure {
+        return XPayPaymentFailure(reason: reason.toReason(), authId: authId, errorCode: errorCode, note: note)
+    }
+}
+
+private extension XPayEmbeddedFailureReason {
+    func toReason() -> XPayFailureReason {
         switch self {
-        case .system: return .system
-        case .network: return .network
-        case .cardholderRetry: return .cardholderRetry
-        case .cardholderChange: return .cardholderChange
-        case .corporatePolicy: return .corporatePolicy
-        case .session: return .session
-        case .unknown: return .unknown
+        case .paymentDeclined: return .paymentDeclined
+        case .sdkError: return .sdkError
+        case .other: return .other
+        }
+    }
+}
+
+private extension XPayEmbeddedPaidBy {
+    func toPaidBy() -> XPayPaidBy {
+        switch self {
+        case .partner: return .partner
+        case .cs: return .cs
+        }
+    }
+}
+
+private extension XPayEmbeddedRideStatus {
+    func toRideStatus() -> XPayRideStatus {
+        switch self {
+        case .completed: return .completed
+        case .cancelled: return .cancelled
         }
     }
 }

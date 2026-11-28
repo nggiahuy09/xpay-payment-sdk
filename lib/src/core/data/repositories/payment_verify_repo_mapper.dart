@@ -2,6 +2,7 @@ import '../../../base/extensions/extensions.dart';
 import '../../domain/entities/payment_authorize_entity.dart';
 import '../../domain/entities/payment_decline_entity.dart';
 import '../../domain/entities/payment_verify_entity.dart';
+import '../datasources/remote/models/merchant_payment_response_model.dart';
 import '../datasources/remote/models/payment_verify_response_model.dart';
 import 'payment_status_mapper.dart';
 import 'payment_verification_recipient_mapper.dart';
@@ -21,6 +22,20 @@ extension PaymentVerifyResponseModelMapper on PaymentVerifyResponseModel {
     bookingRef: bookingRef,
     externalRef: externalRef,
     policyCheck: policyCheck,
+    amount: amount,
+    currency: currency,
+  );
+}
+
+extension MerchantPaymentResponseModelMapper on MerchantPaymentResponseModel {
+  PaymentVerifyEntity toEntity() => PaymentVerifyEntity(
+    status: paymentStatusFromRemote(status),
+    declineReason: declineReason != null ? PaymentDeclineEntity.fromRemote(declineReason) : null,
+    createdAt: DateTime.tryParse(createdAt ?? '')?.toLocal(),
+    authId: authId,
+    captureId: captures?.mapNotNull((capture) => capture.captureId).firstOrNull,
+    bookingRef: bookingRef,
+    externalRef: externalRef,
     amount: amount,
     currency: currency,
   );

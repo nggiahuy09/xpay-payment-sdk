@@ -128,13 +128,13 @@ void main() {
       expect(state, isA<XPayPaymentAuthorizeErrorState>().having((s) => s.errorCode, 'errorCode', 'internal_error'));
     });
 
-    test('a network failure keeps the copy the exception carries', () async {
+    test('a network failure carries the network error code', () async {
       _repository.nextFailure = const XPNetworkException.noConnection();
       final bloc = XPayPaymentBloc(order: _order);
       final state = await _settle(bloc, const XPayPanEnteredEvent('4111111111111111'));
       await bloc.close();
 
-      expect(state, isA<XPayPaymentAuthorizeErrorState>().having((s) => s.displayMessage, 'displayMessage', const XPNetworkException.noConnection().displayMessage));
+      expect(state, isA<XPayPaymentAuthorizeErrorState>().having((s) => s.errorCode, 'errorCode', const XPNetworkException.noConnection().errorCode));
     });
   });
 

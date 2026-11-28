@@ -26,10 +26,11 @@ import '../widgets/xpay_payment_card_methods_widget.dart';
 import 'xpay_payment_entry_view.dart';
 
 final class XPayPaymentView extends StatefulWidget {
-  const XPayPaymentView({super.key, required this.entryModes, required this.session});
+  const XPayPaymentView({super.key, required this.entryModes, required this.session, required this.onOutcome});
 
   final List<PaymentEntryMode> entryModes;
   final PaymentSessionEntity session;
+  final void Function(PaymentFlowOutcomeEntity outcome) onOutcome;
 
   @override
   State<XPayPaymentView> createState() => _XPayPaymentViewState();
@@ -142,9 +143,10 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
     if (_isCompleted || mounted == false) return;
 
     _isCompleted = true;
+    _hostCancellation.detach(_cancelByHost);
     XPLoadingManager.hideDefaultOverlay();
     getIt.get<SnackBarCubit>().clear();
-    Navigator.of(context).pop(outcome);
+    widget.onOutcome.call(outcome);
   }
 
   /// An authorization in flight may already charge the card, so its outcome is awaited instead.
@@ -173,18 +175,18 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
 
       _verificationAuthId = authId;
       if (entryMode == PaymentEntryMode.manualPan && verification.isAwaitingRecipient) {
-        _chooseRecipientThenVerify(verification: verification, entryMode: entryMode, authId: authId);
+        _chooseRecipientThenVerify(verification: verification, authId: authId);
       } else {
         _closeCardEntry();
-        _startVerification(verification: verification, entryMode: entryMode, authId: authId);
+        _startVerification(verification: verification, authId: authId);
       }
       return;
     }
 
-    _complete(PaymentFlowAuthorizedOutcomeEntity(authorize: authorize, entryMode: entryMode));
+    _complete(PaymentFlowAuthorizedOutcomeEntity(authorize));
   }
 
-  Future<void> _chooseRecipientThenVerify({required PaymentAuthorizeVerificationEntity verification, required PaymentEntryMode entryMode, required String authId}) async {
+  Future<void> _chooseRecipientThenVerify({required PaymentAuthorizeVerificationEntity verification, required String authId}) async {
     final innerContext = _innerContext;
     if (innerContext == null) return;
 
@@ -197,15 +199,10 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
     if (recipientId == null) return _complete(PaymentFlowCancelledOutcomeEntity(authId));
 
     _closeCardEntry();
-    _startVerification(verification: verification, entryMode: entryMode, authId: authId, initialRecipientId: recipientId);
+    _startVerification(verification: verification, authId: authId, initialRecipientId: recipientId);
   }
 
-  Future<void> _startVerification({
-    required PaymentAuthorizeVerificationEntity verification,
-    required PaymentEntryMode entryMode,
-    required String authId,
-    String? initialRecipientId,
-  }) async {
+  Future<void> _startVerification({required PaymentAuthorizeVerificationEntity verification, required String authId, String? initialRecipientId}) async {
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
 
@@ -218,13 +215,18 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
           authId: authId,
           initialRecipientId: initialRecipientId,
           sessionExpiredExitLabel: locale.payment.xpay.close,
-          onSessionExpiredExit: () => _complete(PaymentFlowExpiredOutcomeEntity(authId)),
+          onSessionExpiredExit: () => _complete(const PaymentFlowExpiredOutcomeEntity()),
+          onFailed: (errorCode, isConflict) => _complete(
+            isConflict
+                ? PaymentFlowConflictOutcomeEntity(errorCode: errorCode, pendingAuthId: authId)
+                : PaymentFlowFailedOutcomeEntity(errorCode: errorCode, pendingAuthId: authId),
+          ),
         ),
       ),
     );
     if (mounted == false) return;
 
-    _complete(result == null ? PaymentFlowCancelledOutcomeEntity(authId) : PaymentFlowVerifiedOutcomeEntity(result: result, entryMode: entryMode, authId: authId));
+    _complete(result == null ? PaymentFlowCancelledOutcomeEntity(authId) : PaymentFlowVerifiedOutcomeEntity(result: result, authId: authId));
   }
 
   bool _keepBackHandled(NavigationNotification notification) {
@@ -249,10 +251,10 @@ final class _XPayPaymentViewState extends State<XPayPaymentView> {
         _routeAuthorization(state.authorize, state.entryMode);
         break;
       case XPayPaymentAuthorizeConflictState _:
-        _complete(const PaymentFlowConflictOutcomeEntity());
+        _complete(PaymentFlowConflictOutcomeEntity(errorCode: state.errorCode));
         break;
       case XPayPaymentAuthorizeErrorState _:
-        _complete(PaymentFlowAuthorizeFailedOutcomeEntity(entryMode: state.entryMode, reason: state.reason, displayMessage: state.displayMessage, errorCode: state.errorCode));
+        _complete(PaymentFlowFailedOutcomeEntity(errorCode: state.errorCode));
         break;
       case XPayPaymentInvalidQrState _:
         XPSnackBarManager.show(level: XPSnackBarMessageLevel.error, title: xpayLocale.invalidQrCode);

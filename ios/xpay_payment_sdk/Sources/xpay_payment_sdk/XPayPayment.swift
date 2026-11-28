@@ -6,6 +6,11 @@ import UIKit
 /// 1. Call `initialize(config:)` once before the first payment.
 /// 2. Call `start(from:checkout:)` for each payment; it always returns exactly one `XPayPaymentResult`.
 public enum XPayPayment {
+    public static let supportHotline = "19002189"
+
+    @MainActor
+    static var activeFetchSession: (@MainActor () async throws -> String)?
+
     static let engineName = "com.xperise.xpay.payment.engine"
 
     private static let entrypointFunction = "xpayEmbeddedMain"
@@ -43,26 +48,27 @@ public enum XPayPayment {
     /// Presents the SDK screens full screen above `presenter` and returns once they are dismissed.
     ///
     /// Never throws: every failure is reported in the returned result. When the SDK is not initialized, another payment is open,
-    /// or `presenter` is not in a window, the result is `failed` and nothing is presented.
+    /// or `presenter` is not in a window, the result is `unavailable` and nothing is presented.
     @MainActor
     public static func start(from presenter: UIViewController, checkout: XPayCheckout) async -> XPayPaymentResult {
         guard config != nil, let engine = engine, let flutterApi = flutterApi else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.notInitialized, failureCategory: .session)
+            return .unavailable(XPayErrorCode.notInitialized)
         }
         guard activeController == nil else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.busy, failureCategory: .session)
+            return .unavailable(XPayErrorCode.busy)
         }
         guard presenter.viewIfLoaded?.window != nil else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed, failureCategory: .session)
+            return .unavailable(XPayErrorCode.presentationFailed)
         }
 
         let host = topmostController(above: presenter)
         guard host.isBeingDismissed == false else {
-            return XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.presentationFailed, failureCategory: .session)
+            return .unavailable(XPayErrorCode.presentationFailed)
         }
 
         let controller = XPayPaymentViewController(engine: engine)
         activeController = controller
+        activeFetchSession = checkout.fetchSession
 
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<XPayPaymentResult, Never>) in
             host.present(controller, animated: true) {
@@ -72,14 +78,17 @@ public enum XPayPayment {
                     case .success(let message):
                         paymentResult = message.toResult()
                     case .failure:
-                        paymentResult = XPayPaymentResult(status: .failed, errorCode: XPayErrorCode.unexpectedResponse, failureCategory: .session)
+                        paymentResult = .unavailable(XPayErrorCode.unexpectedResponse)
                     }
                     finish(controller, with: paymentResult) { continuation.resume(returning: paymentResult) }
                 }
             }
         }
 
-        if activeController === controller { activeController = nil }
+        if activeController === controller {
+            activeController = nil
+            activeFetchSession = nil
+        }
         if engine.viewController === controller { engine.viewController = nil }
         return result
     }

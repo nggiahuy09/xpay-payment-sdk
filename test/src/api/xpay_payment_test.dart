@@ -39,8 +39,9 @@ void main() {
       final result = await XPayPayment.start(context, const XPayPaymentRequest.fromSession('not json'));
       await tester.pump();
 
-      expect(result.status, XPayPaymentStatus.failed);
+      expect(result.status, XPayPaymentStatus.unavailable);
       expect(result.errorCode, XPayErrorCode.invalidRequest);
+      expect(result.failure?.reason, XPayFailureReason.sdkError);
       expect(_events, hasLength(1));
       expect(_events.single.level, XPayLogLevel.error);
       expect(_events.single.category, XPayLogCategory.error);

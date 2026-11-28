@@ -11,6 +11,7 @@ import '../../../../shared/business_logger/xp_business_logger.dart';
 import '../../../domain/entities/payment_authorize_entity.dart';
 import '../../../domain/entities/payment_verify_entity.dart';
 import '../../../domain/repositories/payment_authorize_repo.dart';
+import '../../../domain/usecases/get_payment_uc.dart';
 import '../../../domain/usecases/resend_payment_verification_uc.dart';
 import '../../../domain/usecases/verify_payment_uc.dart';
 import '../../../domain/entities/payment_resend_verification_failure_reason.dart';
@@ -64,11 +65,16 @@ final class VerificationBloc extends Bloc<VerificationEvent, VerificationState> 
     return verification.isCodeExpiredWithinSession ? null : DateTime.now().add(PaymentAuthorizeVerificationEntity.resendCooldownFallback);
   }
 
+  final _getPayment = GetPaymentUseCase(getIt.get<PaymentAuthorizeRepository>());
   final _logger = getIt.get<XPBusinessLogger>();
   final _resendVerification = ResendPaymentVerificationUseCase(getIt.get<PaymentAuthorizeRepository>());
   final _verifyPayment = VerifyPaymentUseCase(getIt.get<PaymentAuthorizeRepository>());
 
   final String _authId;
+
+  static const String _kOtpExpiredCode = 'otp_expired';
+  static const String _kOtpRecipientRequiredCode = 'otp_recipient_required';
+  static const String _kVerificationNotPendingCode = 'verification_not_pending';
 
   /// Idempotency key for the verification currently being attempted, keyed by the code that is being submitted.
   ///
@@ -110,6 +116,36 @@ final class VerificationBloc extends Bloc<VerificationEvent, VerificationState> 
     );
   }
 
+  bool _emitSettledPayment(Emitter<VerificationState> emit, PaymentVerifyEntity payment) {
+    _logger.logBusiness(
+      input: {'auth_id': _authId, 'payment_status': payment.status.name, 'decline_reason': payment.declineReason?.reason.name},
+      level: XPayLogLevel.warn,
+      action: 'verify_not_pending',
+      feature: 'verification',
+    );
+    switch (payment.status) {
+      case PaymentAuthorizeStatus.approved:
+      case PaymentAuthorizeStatus.captured:
+      case PaymentAuthorizeStatus.partiallyCaptured:
+        emit(VerificationApprovedState(result: payment, verification: state.verification, amount: state.amount, code: state.code));
+        return true;
+      case PaymentAuthorizeStatus.declined:
+        if (payment.declineReason?.isExpired ?? false) {
+          emit(VerificationSessionExpiredState(verification: state.verification, amount: state.amount, code: state.code));
+        } else {
+          emit(VerificationDeclinedState(result: payment, verification: state.verification, amount: state.amount, code: state.code));
+        }
+        return true;
+      case PaymentAuthorizeStatus.voided:
+      case PaymentAuthorizeStatus.expired:
+        emit(VerificationSessionExpiredState(verification: state.verification, amount: state.amount, code: state.code));
+        return true;
+      case PaymentAuthorizeStatus.pendingVerification:
+      case PaymentAuthorizeStatus.unknown:
+        return false;
+    }
+  }
+
   Future<void> _submittedHandler(VerificationSubmitEvent event, Emitter<VerificationState> emit) async {
     if (!state.canSubmit || _isVerifying) return;
 
@@ -135,22 +171,38 @@ final class VerificationBloc extends Bloc<VerificationEvent, VerificationState> 
 
     final input = VerifyPaymentInput(authId: _authId, code: state.code, idempotencyKey: _verifyIdempotencyKey);
     final result = await _verifyPayment.execute(input);
+    final isNotPending = result.getLeftOrNull()?.errorCode == _kVerificationNotPendingCode;
+    final payment = isNotPending && isClosed == false ? (await _getPayment.execute(_authId)).getOrNull() : null;
     _isVerifying = false;
     if (isClosed) return;
+    if (payment != null && _emitSettledPayment(emit, payment)) return;
 
     result.fold(
       (failure) {
         _logger.logBusiness(input: input.toLog(), exception: failure, action: 'verify', feature: 'verification');
+        if (failure.errorCode == _kOtpExpiredCode && state.canOfferResend) {
+          emit(VerificationCodeExpiredState(verification: state.verification, amount: state.amount, resendFailureReason: state.resendFailureReason));
+          maybeAdd(const VerificationResendCodeEvent());
+          return;
+        }
+
+        if (failure.errorCode == _kOtpRecipientRequiredCode || payment != null) {
+          emit(
+            VerificationErrorState(
+              verification: state.verification,
+              amount: state.amount,
+              resendFailureReason: state.resendFailureReason,
+              resendCooldownUntil: state.resendCooldownUntil,
+              code: state.code,
+              failure: failure,
+              attempt: _verifyAttempt,
+            ),
+          );
+          return;
+        }
+
         emit(
-          VerificationErrorState(
-            verification: state.verification,
-            amount: state.amount,
-            resendFailureReason: state.resendFailureReason,
-            resendCooldownUntil: state.resendCooldownUntil,
-            code: state.code,
-            failure: failure,
-            attempt: _verifyAttempt,
-          ),
+          VerificationFailedState(verification: state.verification, amount: state.amount, code: state.code, errorCode: failure.errorCode, isConflict: failure.isConflict),
         );
       },
       (verify) {

@@ -11,6 +11,8 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 object XPayPayment {
+    const val SUPPORT_HOTLINE = "19002189"
+
     internal const val ENGINE_ID = "com.xperise.xpay.payment.engine"
 
     private const val ENTRYPOINT_FUNCTION = "xpayEmbeddedMain"
@@ -18,6 +20,8 @@ object XPayPayment {
 
     internal var config: XPayConfig? = null
         private set
+
+    internal var activeFetchSession: (suspend () -> String)? = null
 
     private var flutterApi: XPayEmbeddedFlutterApi? = null
 
@@ -40,11 +44,13 @@ object XPayPayment {
     }
 
     internal fun startPayment(checkout: XPayCheckout, callback: (XPayPaymentResult) -> Unit) {
-        val flutterApi = flutterApi ?: return callback(XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.NOT_INITIALIZED, failureCategory = XPayFailureCategory.SESSION))
+        val flutterApi = flutterApi ?: return callback(XPayPaymentResult.unavailable(XPayErrorCode.NOT_INITIALIZED))
+        activeFetchSession = checkout.fetchSession
         flutterApi.start(checkout.toMessage()) { result ->
+            activeFetchSession = null
             val paymentResult = result.fold(
                 onSuccess = { message -> message.toResult() },
-                onFailure = { XPayPaymentResult(XPayPaymentStatus.FAILED, errorCode = XPayErrorCode.UNEXPECTED_RESPONSE, failureCategory = XPayFailureCategory.SESSION) },
+                onFailure = { XPayPaymentResult.unavailable(XPayErrorCode.UNEXPECTED_RESPONSE) },
             )
             callback(paymentResult)
         }

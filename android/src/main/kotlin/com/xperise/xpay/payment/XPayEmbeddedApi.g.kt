@@ -195,19 +195,15 @@ class XPayEmbeddedError (
   val details: Any? = null
 ) : RuntimeException()
 
-enum class XPayEmbeddedFailureCategory(val raw: Int) {
-  SYSTEM(0),
-  NETWORK(1),
-  CARDHOLDER_RETRY(2),
-  CARDHOLDER_CHANGE(3),
-  CORPORATE_POLICY(4),
-  SESSION(5),
-  UNKNOWN(6);
+enum class XPayEmbeddedFailureReason(val raw: Int) {
+  PAYMENT_DECLINED(0),
+  SDK_ERROR(1),
+  OTHER(2);
 
   companion object {
     private val pigeonValues = values()
 
-    fun ofRaw(raw: Int): XPayEmbeddedFailureCategory? {
+    fun ofRaw(raw: Int): XPayEmbeddedFailureReason? {
       return pigeonValues.getOrNull(raw)
     }
   }
@@ -254,20 +250,45 @@ enum class XPayEmbeddedLogLevel(val raw: Int) {
   }
 }
 
+enum class XPayEmbeddedPaidBy(val raw: Int) {
+  PARTNER(0),
+  CS(1);
+
+  companion object {
+    private val pigeonValues = values()
+
+    fun ofRaw(raw: Int): XPayEmbeddedPaidBy? {
+      return pigeonValues.getOrNull(raw)
+    }
+  }
+}
+
 enum class XPayEmbeddedPaymentStatus(val raw: Int) {
-  APPROVED(0),
-  CAPTURED(1),
-  DECLINED(2),
-  CANCELLED(3),
-  DUPLICATE(4),
-  FAILED(5),
-  EXPIRED(6),
-  UNSUPPORTED(7);
+  PAID(0),
+  RETRY_IN_PARTNER(1),
+  OTHER_METHOD(2),
+  CS_PENDING(3),
+  RIDE_CLOSED(4),
+  CANCELLED(5),
+  UNAVAILABLE(6);
 
   companion object {
     private val pigeonValues = values()
 
     fun ofRaw(raw: Int): XPayEmbeddedPaymentStatus? {
+      return pigeonValues.getOrNull(raw)
+    }
+  }
+}
+
+enum class XPayEmbeddedRideStatus(val raw: Int) {
+  COMPLETED(0),
+  CANCELLED(1);
+
+  companion object {
+    private val pigeonValues = values()
+
+    fun ofRaw(raw: Int): XPayEmbeddedRideStatus? {
       return pigeonValues.getOrNull(raw)
     }
   }
@@ -316,18 +337,21 @@ data class XPayEmbeddedConfigMessage (
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class XPayEmbeddedRequestMessage (
-  val sessionJson: String
+  val sessionJson: String,
+  val canFetchSession: Boolean
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): XPayEmbeddedRequestMessage {
       val sessionJson = pigeonVar_list[0] as String
-      return XPayEmbeddedRequestMessage(sessionJson)
+      val canFetchSession = pigeonVar_list[1] as Boolean
+      return XPayEmbeddedRequestMessage(sessionJson, canFetchSession)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       sessionJson,
+      canFetchSession,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -338,64 +362,114 @@ data class XPayEmbeddedRequestMessage (
       return true
     }
     val other = other as XPayEmbeddedRequestMessage
-    return XPayEmbeddedApiPigeonUtils.deepEquals(this.sessionJson, other.sessionJson)
+    return XPayEmbeddedApiPigeonUtils.deepEquals(this.sessionJson, other.sessionJson) && XPayEmbeddedApiPigeonUtils.deepEquals(this.canFetchSession, other.canFetchSession)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.sessionJson)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.canFetchSession)
     return result
   }
   override fun toString(): String {
-    return "XPayEmbeddedRequestMessage(sessionJson=$sessionJson)"
+    return "XPayEmbeddedRequestMessage(sessionJson=$sessionJson, canFetchSession=$canFetchSession)"
+  }
+}
+
+/** Generated class from Pigeon that represents data sent in messages. */
+data class XPayEmbeddedFailureMessage (
+  val reason: XPayEmbeddedFailureReason,
+  val authId: String? = null,
+  val errorCode: String? = null,
+  val note: String? = null
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): XPayEmbeddedFailureMessage {
+      val reason = pigeonVar_list[0] as XPayEmbeddedFailureReason
+      val authId = pigeonVar_list[1] as String?
+      val errorCode = pigeonVar_list[2] as String?
+      val note = pigeonVar_list[3] as String?
+      return XPayEmbeddedFailureMessage(reason, authId, errorCode, note)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      reason,
+      authId,
+      errorCode,
+      note,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as XPayEmbeddedFailureMessage
+    return XPayEmbeddedApiPigeonUtils.deepEquals(this.reason, other.reason) && XPayEmbeddedApiPigeonUtils.deepEquals(this.authId, other.authId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.errorCode, other.errorCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.note, other.note)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.reason)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.authId)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.errorCode)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.note)
+    return result
+  }
+  override fun toString(): String {
+    return "XPayEmbeddedFailureMessage(reason=$reason, authId=$authId, errorCode=$errorCode, note=$note)"
   }
 }
 
 /** Generated class from Pigeon that represents data sent in messages. */
 data class XPayEmbeddedResultMessage (
-  val failureCategory: XPayEmbeddedFailureCategory? = null,
+  val failure: XPayEmbeddedFailureMessage? = null,
+  val paidBy: XPayEmbeddedPaidBy? = null,
+  val rideStatus: XPayEmbeddedRideStatus? = null,
   val status: XPayEmbeddedPaymentStatus,
   val authId: String? = null,
-  val bookingRef: String? = null,
   val captureId: String? = null,
   val currency: String? = null,
-  val declineCode: String? = null,
   val errorCode: String? = null,
   val externalRef: String? = null,
-  val message: String? = null,
+  val pendingAuthId: String? = null,
   val amount: Long? = null,
   val createdAtEpochMillis: Long? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): XPayEmbeddedResultMessage {
-      val failureCategory = pigeonVar_list[0] as XPayEmbeddedFailureCategory?
-      val status = pigeonVar_list[1] as XPayEmbeddedPaymentStatus
-      val authId = pigeonVar_list[2] as String?
-      val bookingRef = pigeonVar_list[3] as String?
-      val captureId = pigeonVar_list[4] as String?
-      val currency = pigeonVar_list[5] as String?
-      val declineCode = pigeonVar_list[6] as String?
+      val failure = pigeonVar_list[0] as XPayEmbeddedFailureMessage?
+      val paidBy = pigeonVar_list[1] as XPayEmbeddedPaidBy?
+      val rideStatus = pigeonVar_list[2] as XPayEmbeddedRideStatus?
+      val status = pigeonVar_list[3] as XPayEmbeddedPaymentStatus
+      val authId = pigeonVar_list[4] as String?
+      val captureId = pigeonVar_list[5] as String?
+      val currency = pigeonVar_list[6] as String?
       val errorCode = pigeonVar_list[7] as String?
       val externalRef = pigeonVar_list[8] as String?
-      val message = pigeonVar_list[9] as String?
+      val pendingAuthId = pigeonVar_list[9] as String?
       val amount = pigeonVar_list[10] as Long?
       val createdAtEpochMillis = pigeonVar_list[11] as Long?
-      return XPayEmbeddedResultMessage(failureCategory, status, authId, bookingRef, captureId, currency, declineCode, errorCode, externalRef, message, amount, createdAtEpochMillis)
+      return XPayEmbeddedResultMessage(failure, paidBy, rideStatus, status, authId, captureId, currency, errorCode, externalRef, pendingAuthId, amount, createdAtEpochMillis)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
-      failureCategory,
+      failure,
+      paidBy,
+      rideStatus,
       status,
       authId,
-      bookingRef,
       captureId,
       currency,
-      declineCode,
       errorCode,
       externalRef,
-      message,
+      pendingAuthId,
       amount,
       createdAtEpochMillis,
     )
@@ -408,27 +482,27 @@ data class XPayEmbeddedResultMessage (
       return true
     }
     val other = other as XPayEmbeddedResultMessage
-    return XPayEmbeddedApiPigeonUtils.deepEquals(this.failureCategory, other.failureCategory) && XPayEmbeddedApiPigeonUtils.deepEquals(this.status, other.status) && XPayEmbeddedApiPigeonUtils.deepEquals(this.authId, other.authId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.bookingRef, other.bookingRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.captureId, other.captureId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.currency, other.currency) && XPayEmbeddedApiPigeonUtils.deepEquals(this.declineCode, other.declineCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.errorCode, other.errorCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.externalRef, other.externalRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.message, other.message) && XPayEmbeddedApiPigeonUtils.deepEquals(this.amount, other.amount) && XPayEmbeddedApiPigeonUtils.deepEquals(this.createdAtEpochMillis, other.createdAtEpochMillis)
+    return XPayEmbeddedApiPigeonUtils.deepEquals(this.failure, other.failure) && XPayEmbeddedApiPigeonUtils.deepEquals(this.paidBy, other.paidBy) && XPayEmbeddedApiPigeonUtils.deepEquals(this.rideStatus, other.rideStatus) && XPayEmbeddedApiPigeonUtils.deepEquals(this.status, other.status) && XPayEmbeddedApiPigeonUtils.deepEquals(this.authId, other.authId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.captureId, other.captureId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.currency, other.currency) && XPayEmbeddedApiPigeonUtils.deepEquals(this.errorCode, other.errorCode) && XPayEmbeddedApiPigeonUtils.deepEquals(this.externalRef, other.externalRef) && XPayEmbeddedApiPigeonUtils.deepEquals(this.pendingAuthId, other.pendingAuthId) && XPayEmbeddedApiPigeonUtils.deepEquals(this.amount, other.amount) && XPayEmbeddedApiPigeonUtils.deepEquals(this.createdAtEpochMillis, other.createdAtEpochMillis)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
-    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.failureCategory)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.failure)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.paidBy)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.rideStatus)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.status)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.authId)
-    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.bookingRef)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.captureId)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.currency)
-    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.declineCode)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.errorCode)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.externalRef)
-    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.message)
+    result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.pendingAuthId)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.amount)
     result = 31 * result + XPayEmbeddedApiPigeonUtils.deepHash(this.createdAtEpochMillis)
     return result
   }
   override fun toString(): String {
-    return "XPayEmbeddedResultMessage(failureCategory=$failureCategory, status=$status, authId=$authId, bookingRef=$bookingRef, captureId=$captureId, currency=$currency, declineCode=$declineCode, errorCode=$errorCode, externalRef=$externalRef, message=$message, amount=$amount, createdAtEpochMillis=$createdAtEpochMillis)"
+    return "XPayEmbeddedResultMessage(failure=$failure, paidBy=$paidBy, rideStatus=$rideStatus, status=$status, authId=$authId, captureId=$captureId, currency=$currency, errorCode=$errorCode, externalRef=$externalRef, pendingAuthId=$pendingAuthId, amount=$amount, createdAtEpochMillis=$createdAtEpochMillis)"
   }
 }
 
@@ -501,7 +575,7 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
     return when (type) {
       129.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedFailureCategory.ofRaw(it.toInt())
+          XPayEmbeddedFailureReason.ofRaw(it.toInt())
         }
       }
       130.toByte() -> {
@@ -521,25 +595,40 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
       }
       133.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          XPayEmbeddedPaymentStatus.ofRaw(it.toInt())
+          XPayEmbeddedPaidBy.ofRaw(it.toInt())
         }
       }
       134.toByte() -> {
-        (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedConfigMessage.fromList(it)
+        (readValue(buffer) as Long?)?.let {
+          XPayEmbeddedPaymentStatus.ofRaw(it.toInt())
         }
       }
       135.toByte() -> {
-        (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedRequestMessage.fromList(it)
+        (readValue(buffer) as Long?)?.let {
+          XPayEmbeddedRideStatus.ofRaw(it.toInt())
         }
       }
       136.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
-          XPayEmbeddedResultMessage.fromList(it)
+          XPayEmbeddedConfigMessage.fromList(it)
         }
       }
       137.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          XPayEmbeddedRequestMessage.fromList(it)
+        }
+      }
+      138.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          XPayEmbeddedFailureMessage.fromList(it)
+        }
+      }
+      139.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          XPayEmbeddedResultMessage.fromList(it)
+        }
+      }
+      140.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
           XPayEmbeddedLogMessage.fromList(it)
         }
@@ -549,7 +638,7 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
   }
   override fun writeValue(stream: ByteArrayOutputStream, value: Any?)   {
     when (value) {
-      is XPayEmbeddedFailureCategory -> {
+      is XPayEmbeddedFailureReason -> {
         stream.write(129)
         writeValue(stream, value.raw.toLong())
       }
@@ -565,30 +654,43 @@ private open class XPayEmbeddedApiPigeonCodec : StandardMessageCodec() {
         stream.write(132)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedPaymentStatus -> {
+      is XPayEmbeddedPaidBy -> {
         stream.write(133)
         writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedConfigMessage -> {
+      is XPayEmbeddedPaymentStatus -> {
         stream.write(134)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedRequestMessage -> {
+      is XPayEmbeddedRideStatus -> {
         stream.write(135)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is XPayEmbeddedResultMessage -> {
+      is XPayEmbeddedConfigMessage -> {
         stream.write(136)
         writeValue(stream, value.toList())
       }
-      is XPayEmbeddedLogMessage -> {
+      is XPayEmbeddedRequestMessage -> {
         stream.write(137)
+        writeValue(stream, value.toList())
+      }
+      is XPayEmbeddedFailureMessage -> {
+        stream.write(138)
+        writeValue(stream, value.toList())
+      }
+      is XPayEmbeddedResultMessage -> {
+        stream.write(139)
+        writeValue(stream, value.toList())
+      }
+      is XPayEmbeddedLogMessage -> {
+        stream.write(140)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)
     }
   }
 }
+
 
 /** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
 class XPayEmbeddedFlutterApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
@@ -656,6 +758,7 @@ class XPayEmbeddedFlutterApi(private val binaryMessenger: BinaryMessenger, priva
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface XPayEmbeddedHostApi {
   fun onLog(event: XPayEmbeddedLogMessage)
+  fun fetchSession(callback: (Result<String>) -> Unit)
 
   companion object {
     /** The codec used by XPayEmbeddedHostApi. */
@@ -679,6 +782,24 @@ interface XPayEmbeddedHostApi {
               XPayEmbeddedApiPigeonUtils.wrapError(exception)
             }
             reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.xpay_payment_sdk.XPayEmbeddedHostApi.fetchSession$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.fetchSession{ result: Result<String> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(XPayEmbeddedApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(XPayEmbeddedApiPigeonUtils.wrapResult(data))
+              }
+            }
           }
         } else {
           channel.setMessageHandler(null)

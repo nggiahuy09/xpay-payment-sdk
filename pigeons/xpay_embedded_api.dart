@@ -18,37 +18,47 @@ class XPayEmbeddedConfigMessage {
 }
 
 class XPayEmbeddedRequestMessage {
-  XPayEmbeddedRequestMessage({required this.sessionJson});
+  XPayEmbeddedRequestMessage({required this.sessionJson, required this.canFetchSession});
 
   String sessionJson;
+  bool canFetchSession;
+}
+
+class XPayEmbeddedFailureMessage {
+  XPayEmbeddedFailureMessage({required this.reason, this.authId, this.errorCode, this.note});
+
+  XPayEmbeddedFailureReason reason;
+  String? authId;
+  String? errorCode;
+  String? note;
 }
 
 class XPayEmbeddedResultMessage {
   XPayEmbeddedResultMessage({
-    this.failureCategory,
+    this.failure,
+    this.paidBy,
+    this.rideStatus,
     required this.status,
     this.authId,
-    this.bookingRef,
     this.captureId,
     this.currency,
-    this.declineCode,
     this.errorCode,
     this.externalRef,
-    this.message,
+    this.pendingAuthId,
     this.amount,
     this.createdAtEpochMillis,
   });
 
-  XPayEmbeddedFailureCategory? failureCategory;
+  XPayEmbeddedFailureMessage? failure;
+  XPayEmbeddedPaidBy? paidBy;
+  XPayEmbeddedRideStatus? rideStatus;
   XPayEmbeddedPaymentStatus status;
   String? authId;
-  String? bookingRef;
   String? captureId;
   String? currency;
-  String? declineCode;
   String? errorCode;
   String? externalRef;
-  String? message;
+  String? pendingAuthId;
   int? amount;
   int? createdAtEpochMillis;
 }
@@ -90,9 +100,12 @@ abstract class XPayEmbeddedFlutterApi {
 @HostApi()
 abstract class XPayEmbeddedHostApi {
   void onLog(XPayEmbeddedLogMessage event);
+
+  @asyncCallback
+  String fetchSession();
 }
 
-enum XPayEmbeddedFailureCategory { system, network, cardholderRetry, cardholderChange, corporatePolicy, session, unknown }
+enum XPayEmbeddedFailureReason { paymentDeclined, sdkError, other }
 
 enum XPayEmbeddedLanguage { en, vi }
 
@@ -100,4 +113,8 @@ enum XPayEmbeddedLogCategory { api, behavior, error }
 
 enum XPayEmbeddedLogLevel { info, warn, error }
 
-enum XPayEmbeddedPaymentStatus { approved, captured, declined, cancelled, duplicate, failed, expired, unsupported }
+enum XPayEmbeddedPaidBy { partner, cs }
+
+enum XPayEmbeddedPaymentStatus { paid, retryInPartner, otherMethod, csPending, rideClosed, cancelled, unavailable }
+
+enum XPayEmbeddedRideStatus { completed, cancelled }

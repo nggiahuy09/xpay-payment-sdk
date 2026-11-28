@@ -67,6 +67,10 @@ final class $XPLocaleVIPaymentWallet implements $XPLocaleBasePaymentWallet {
   @override
   String get otpLockedBody => 'Mã đã bị khoá do nhập sai quá số lần cho phép. Vui lòng gửi lại mã mới.';
   @override
+  String get otpNotPendingTitle => 'Mã không còn hiệu lực';
+  @override
+  String get otpNotPendingBody => 'Mã này không còn dùng được. Vui lòng gửi lại mã mới.';
+  @override
   String get otpVelocityExceededTitle => 'Gửi mã quá nhiều lần';
   @override
   String get otpVelocityExceededBody => 'Đã yêu cầu quá nhiều mã trong thời gian ngắn. Vui lòng thử lại sau ít phút hoặc dùng mã QR.';

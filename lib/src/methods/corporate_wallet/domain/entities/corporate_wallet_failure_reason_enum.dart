@@ -5,6 +5,7 @@ enum CorporateWalletFailureReason {
   otpInvalid,
   otpExpired,
   otpLocked,
+  otpNotPending,
   otpVelocityExceeded,
   otpDeliveryFailed,
   otpRecipientUnavailable,
@@ -20,6 +21,7 @@ enum CorporateWalletFailureReason {
     'otp_invalid' => CorporateWalletFailureReason.otpInvalid,
     'otp_expired' => CorporateWalletFailureReason.otpExpired,
     'otp_locked' => CorporateWalletFailureReason.otpLocked,
+    'otp_not_pending' => CorporateWalletFailureReason.otpNotPending,
     'otp_velocity_exceeded' => CorporateWalletFailureReason.otpVelocityExceeded,
     'otp_delivery_failed' => CorporateWalletFailureReason.otpDeliveryFailed,
     'otp_recipient_unavailable' => CorporateWalletFailureReason.otpRecipientUnavailable,
@@ -34,9 +36,12 @@ enum CorporateWalletFailureReason {
   static CorporateWalletFailureReason fromException(XPException failure) =>
       failure.isSessionRejected ? CorporateWalletFailureReason.sessionRejected : fromRemote(failure.errorCode);
 
-  bool get isCodeRejection => this == CorporateWalletFailureReason.otpInvalid || this == CorporateWalletFailureReason.otpExpired || this == CorporateWalletFailureReason.otpLocked;
+  bool get isCodeRejection => this == CorporateWalletFailureReason.otpInvalid || isCodeUnusable;
 
-  bool get isCodeUnusable => this == CorporateWalletFailureReason.otpExpired || this == CorporateWalletFailureReason.otpLocked;
+  bool get isCodeUnusable =>
+      this == CorporateWalletFailureReason.otpExpired || this == CorporateWalletFailureReason.otpLocked || this == CorporateWalletFailureReason.otpNotPending;
+
+  bool get needsHotline => this == CorporateWalletFailureReason.walletRefused || this == CorporateWalletFailureReason.walletUnavailable;
 
   bool get isTerminal =>
       this == CorporateWalletFailureReason.amountLocked ||
@@ -50,6 +55,7 @@ enum CorporateWalletFailureReason {
       CorporateWalletFailureReason.otpInvalid => locale.payment.verification.otpInvalidTitle,
       CorporateWalletFailureReason.otpExpired => walletLocale.otpExpiredTitle,
       CorporateWalletFailureReason.otpLocked => walletLocale.otpLockedTitle,
+      CorporateWalletFailureReason.otpNotPending => walletLocale.otpNotPendingTitle,
       CorporateWalletFailureReason.otpVelocityExceeded => walletLocale.otpVelocityExceededTitle,
       CorporateWalletFailureReason.otpDeliveryFailed => walletLocale.otpDeliveryFailedTitle,
       CorporateWalletFailureReason.otpRecipientUnavailable => walletLocale.otpRecipientUnavailableTitle,
@@ -69,6 +75,7 @@ enum CorporateWalletFailureReason {
       CorporateWalletFailureReason.otpInvalid => locale.payment.verification.otpInvalidBody,
       CorporateWalletFailureReason.otpExpired => walletLocale.otpExpiredBody,
       CorporateWalletFailureReason.otpLocked => walletLocale.otpLockedBody,
+      CorporateWalletFailureReason.otpNotPending => walletLocale.otpNotPendingBody,
       CorporateWalletFailureReason.otpVelocityExceeded => walletLocale.otpVelocityExceededBody,
       CorporateWalletFailureReason.otpDeliveryFailed => walletLocale.otpDeliveryFailedBody,
       CorporateWalletFailureReason.otpRecipientUnavailable => walletLocale.otpRecipientUnavailableBody,

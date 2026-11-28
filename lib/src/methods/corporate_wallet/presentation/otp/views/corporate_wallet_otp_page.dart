@@ -16,6 +16,7 @@ final class CorporateWalletOtpPage extends StatelessWidget {
     required this.order,
     required this.onSubmittingChanged,
     required this.onVerified,
+    required this.onInterrupted,
     required this.onFailed,
   });
 
@@ -24,11 +25,12 @@ final class CorporateWalletOtpPage extends StatelessWidget {
   final PaymentOrderEntity order;
   final void Function(bool isSubmitting) onSubmittingChanged;
   final void Function(CorporateWalletPaymentEntity payment) onVerified;
-  final void Function(String? errorCode, String? displayMessage) onFailed;
+  final void Function(String? errorCode) onInterrupted;
+  final void Function(String? errorCode, bool isConflict) onFailed;
 
   @override
   Widget build(BuildContext context) => BlocProvider<CorporateWalletOtpBloc>(
     create: (_) => CorporateWalletOtpBloc(channels: channels, challenge: challenge),
-    child: CorporateWalletOtpView(order: order, onSubmittingChanged: onSubmittingChanged, onVerified: onVerified, onFailed: onFailed),
+    child: CorporateWalletOtpView(order: order, onSubmittingChanged: onSubmittingChanged, onVerified: onVerified, onInterrupted: onInterrupted, onFailed: onFailed),
   );
 }

@@ -16,6 +16,12 @@ abstract class XPResource<T> {
 
   Map<String, dynamic>? get queryParameters => null;
 
+  /// Longest the whole request may take, replays included; null keeps the client's connect and receive timeouts.
+  Duration? get timeout => null;
+
+  /// Whether `XPTransientRetryInterceptor` may replay this request after a timeout, a lost connection or a 5xx.
+  bool get retriesTransientFailures => true;
+
   XPHttpMethod get method;
 
   String get path;

@@ -23,13 +23,18 @@ final class XPayDemoResultCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final rows = <(String, String)>[
       ('Status', result.status.name),
-      if (result.message case final String value) ('Message', value),
+      ('Retryable', '${result.isRetryable}'),
+      if (result.failure case final XPayPaymentFailure failure) ('Failure reason', failure.reason.toRemote()),
+      if (result.failure?.authId case final String value) ('Failure auth ID', value),
+      if (result.failure?.errorCode case final String value) ('Failure code', value),
+      if (result.failure?.note case final String value) ('Failure note', value),
+      if (result.paidBy case final XPayPaidBy value) ('Paid by', value.name),
+      if (result.rideStatus case final XPayRideStatus value) ('Ride status', value.name),
       if (result.authId case final String value) ('Auth ID', value),
+      if (result.pendingAuthId case final String value) ('Pending auth ID', value),
       if (result.captureId case final String value) ('Capture ID', value),
-      if (result.bookingRef case final String value) ('Booking ref', value),
       if (result.externalRef case final String value) ('External ref', value),
       if (result.amount case final int value) ('Amount', '$value ${result.currency ?? ''}'.trim()),
-      if (result.declineCode case final String value) ('Decline code', value),
       if (result.errorCode case final String value) ('Error code', value),
       if (result.createdAt case final DateTime value) ('Created at', value.toIso8601String()),
     ];

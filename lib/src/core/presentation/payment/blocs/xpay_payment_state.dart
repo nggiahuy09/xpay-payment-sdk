@@ -36,24 +36,21 @@ final class XPayPaymentAuthorizeDoneState extends XPayPaymentState {
 }
 
 final class XPayPaymentAuthorizeConflictState extends XPayPaymentState {
-  const XPayPaymentAuthorizeConflictState(this.attempt);
+  const XPayPaymentAuthorizeConflictState({this.errorCode, required this.attempt});
 
-  final int attempt;
-
-  @override
-  List<Object?> get props => [attempt];
-}
-
-final class XPayPaymentAuthorizeErrorState extends XPayPaymentState {
-  XPayPaymentAuthorizeErrorState({required this.entryMode, this.displayMessage, this.errorCode, required this.attempt})
-    : reason = CreatePaymentAuthorizeFailureReason.fromErrorCode(errorCode);
-
-  final PaymentEntryMode entryMode;
-  final CreatePaymentAuthorizeFailureReason reason;
-  final String? displayMessage;
   final String? errorCode;
   final int attempt;
 
   @override
-  List<Object?> get props => [entryMode, reason, displayMessage, errorCode, attempt];
+  List<Object?> get props => [errorCode, attempt];
+}
+
+final class XPayPaymentAuthorizeErrorState extends XPayPaymentState {
+  const XPayPaymentAuthorizeErrorState({this.errorCode, required this.attempt});
+
+  final String? errorCode;
+  final int attempt;
+
+  @override
+  List<Object?> get props => [errorCode, attempt];
 }

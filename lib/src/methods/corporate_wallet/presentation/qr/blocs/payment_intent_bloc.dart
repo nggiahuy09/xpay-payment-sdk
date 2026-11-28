@@ -79,7 +79,7 @@ final class PaymentIntentBloc extends Bloc<PaymentIntentEvent, PaymentIntentStat
 
         _logger.logBusiness(input: input.toLog(), exception: failure, action: 'create_intent', feature: 'corporate_wallet');
         if (failure.isSessionRejected) {
-          emit(PaymentIntentFailedState(errorCode: failure.errorCode, errorMessage: failure.displayMessage, isSessionExpired: false));
+          emit(PaymentIntentFailedState(failure.errorCode));
           return;
         }
 
@@ -122,7 +122,7 @@ final class PaymentIntentBloc extends Bloc<PaymentIntentEvent, PaymentIntentStat
       case Left(value: final failure):
         _intentId = null;
         _logger.logBusiness(input: {'intent_id': event.intentId}, exception: failure, action: 'poll_intent', feature: 'corporate_wallet');
-        emit(PaymentIntentFailedState(errorCode: failure.errorCode, errorMessage: failure.displayMessage, isSessionExpired: failure is XPUnauthorizedException));
+        emit(PaymentIntentFailedState(failure.errorCode));
       case Right(value: final intent):
         _emitIntent(emit, intent);
     }

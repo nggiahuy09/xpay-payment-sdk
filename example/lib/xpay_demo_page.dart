@@ -11,14 +11,17 @@ final class XPayDemoPage extends StatefulWidget {
 }
 
 final class _XPayDemoPageState extends State<XPayDemoPage> {
+  static const Duration _hangDuration = Duration(seconds: 60);
   static const int _maxLogEvents = 30;
 
   final List<XPayLogEvent> _logEvents = [];
   final TextEditingController _baseUrlController = TextEditingController(text: const String.fromEnvironment('XPAY_BASE_URL'));
+  final TextEditingController _renewedSessionJsonController = TextEditingController();
   final TextEditingController _sessionJsonController = TextEditingController(text: const String.fromEnvironment('XPAY_SESSION_JSON'));
 
   XPayPaymentResult? _lastResult;
   XPayLanguage _language = XPayLanguage.vi;
+  XPayDemoSessionRenewal _sessionRenewal = XPayDemoSessionRenewal.off;
   String? _appliedConfigSignature;
   bool _isPaying = false;
 
@@ -27,6 +30,7 @@ final class _XPayDemoPageState extends State<XPayDemoPage> {
   @override
   void dispose() {
     _baseUrlController.dispose();
+    _renewedSessionJsonController.dispose();
     _sessionJsonController.dispose();
     super.dispose();
   }
@@ -59,13 +63,29 @@ final class _XPayDemoPageState extends State<XPayDemoPage> {
     await _applyConfigIfChanged();
     if (mounted == false) return;
 
-    final result = await XPayPayment.start(context, XPayPaymentRequest.fromSession(_sessionJsonController.text));
+    final result = await XPayPayment.start(context, XPayPaymentRequest.fromSession(_sessionJsonController.text, _createFetchSession()));
     if (mounted == false) return;
 
     setState(() {
       _isPaying = false;
       _lastResult = result;
     });
+  }
+
+  Future<String> Function()? _createFetchSession() => switch (_sessionRenewal) {
+    XPayDemoSessionRenewal.pasted => _fetchPastedSession,
+    XPayDemoSessionRenewal.error => _fetchSessionWithError,
+    XPayDemoSessionRenewal.hang => _fetchSessionAfterHang,
+    XPayDemoSessionRenewal.off => null,
+  };
+
+  Future<String> _fetchPastedSession() async => _renewedSessionJsonController.text;
+
+  Future<String> _fetchSessionWithError() => Future.error(StateError('fetchSession failed on purpose (session renewal: ${_sessionRenewal.label}).'));
+
+  Future<String> _fetchSessionAfterHang() async {
+    await Future<void>.delayed(_hangDuration);
+    throw StateError('fetchSession hung on purpose (session renewal: ${_sessionRenewal.label}).');
   }
 
   @override
@@ -106,6 +126,29 @@ final class _XPayDemoPageState extends State<XPayDemoPage> {
               ),
             ),
             const SizedBox(height: 12.0),
+            Text('fetchSession when the session expires', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 4.0),
+            SegmentedButton<XPayDemoSessionRenewal>(
+              segments: [for (final renewal in XPayDemoSessionRenewal.values) ButtonSegment(value: renewal, label: Text(renewal.label))],
+              selected: {_sessionRenewal},
+              onSelectionChanged: _isPaying ? null : (selection) => setState(() => _sessionRenewal = selection.first),
+            ),
+            const SizedBox(height: 4.0),
+            Text(_sessionRenewal.description, style: Theme.of(context).textTheme.bodySmall),
+            if (_sessionRenewal.isPasted) ...[
+              const SizedBox(height: 12.0),
+              TextField(
+                controller: _renewedSessionJsonController,
+                keyboardType: TextInputType.multiline,
+                minLines: 3,
+                maxLines: 8,
+                decoration: const InputDecoration(
+                  labelText: 'Renewed session JSON',
+                  helperText: 'A fresh payment-session response of the same ride. Open it with another fare to test the fare-changed popup.',
+                ),
+              ),
+            ],
+            const SizedBox(height: 12.0),
             FilledButton(
               onPressed: _isPaying ? null : _handlePay,
               child: Text(_isPaying ? 'Paying…' : 'Pay'),
@@ -125,4 +168,18 @@ final class _XPayDemoPageState extends State<XPayDemoPage> {
       ),
     );
   }
+}
+
+enum XPayDemoSessionRenewal {
+  pasted('Paste', 'Returns the renewed session JSON below.'),
+  error('Error', 'Throws, so the SDK cannot renew the session.'),
+  hang('Hang 60 s', "Answers nothing within the SDK's 15 s limit."),
+  off('Off', 'No fetchSession: an expired session fails the payment.');
+
+  const XPayDemoSessionRenewal(this.label, this.description);
+
+  final String description;
+  final String label;
+
+  bool get isPasted => this == XPayDemoSessionRenewal.pasted;
 }

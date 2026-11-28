@@ -85,4 +85,16 @@ final class PaymentAuthorizeRepositoryImpl extends PaymentAuthorizeRepository {
       return Left(XPUnknownException(error: e));
     }
   }
+
+  @override
+  Future<Either<XPException, PaymentVerifyEntity>> getPayment(String authId) async {
+    try {
+      final model = await _remote.getPayment(authId);
+      return Right(model.toEntity());
+    } on XPException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(XPUnknownException(error: e));
+    }
+  }
 }

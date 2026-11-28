@@ -4,21 +4,21 @@ import java.util.Date
 
 internal fun XPayConfig.toMessage(): XPayEmbeddedConfigMessage = XPayEmbeddedConfigMessage(language = language.toMessage(), baseUrl = environment.baseUrl)
 
-internal fun XPayCheckout.toMessage(): XPayEmbeddedRequestMessage = XPayEmbeddedRequestMessage(sessionJson = sessionJson)
+internal fun XPayCheckout.toMessage(): XPayEmbeddedRequestMessage = XPayEmbeddedRequestMessage(sessionJson = sessionJson, canFetchSession = fetchSession != null)
 
 internal fun XPayEmbeddedResultMessage.toResult(): XPayPaymentResult = XPayPaymentResult(
     status = status.toStatus(),
+    failure = failure?.toFailure(),
+    paidBy = paidBy?.toPaidBy(),
+    rideStatus = rideStatus?.toRideStatus(),
     authId = authId,
-    bookingRef = bookingRef,
     captureId = captureId,
     currency = currency,
-    declineCode = declineCode,
     errorCode = errorCode,
     externalRef = externalRef,
-    message = message,
+    pendingAuthId = pendingAuthId,
     amount = amount,
     createdAt = createdAtEpochMillis?.let(::Date),
-    failureCategory = failureCategory?.toCategory(),
 )
 
 internal fun XPayEmbeddedLogMessage.toLogEvent(): XPayLogEvent = XPayLogEvent(
@@ -38,24 +38,31 @@ private fun XPayLanguage.toMessage(): XPayEmbeddedLanguage = when (this) {
 }
 
 private fun XPayEmbeddedPaymentStatus.toStatus(): XPayPaymentStatus = when (this) {
-    XPayEmbeddedPaymentStatus.APPROVED -> XPayPaymentStatus.APPROVED
-    XPayEmbeddedPaymentStatus.CAPTURED -> XPayPaymentStatus.CAPTURED
-    XPayEmbeddedPaymentStatus.DECLINED -> XPayPaymentStatus.DECLINED
+    XPayEmbeddedPaymentStatus.PAID -> XPayPaymentStatus.PAID
+    XPayEmbeddedPaymentStatus.RETRY_IN_PARTNER -> XPayPaymentStatus.RETRY_IN_PARTNER
+    XPayEmbeddedPaymentStatus.OTHER_METHOD -> XPayPaymentStatus.OTHER_METHOD
+    XPayEmbeddedPaymentStatus.CS_PENDING -> XPayPaymentStatus.CS_PENDING
+    XPayEmbeddedPaymentStatus.RIDE_CLOSED -> XPayPaymentStatus.RIDE_CLOSED
     XPayEmbeddedPaymentStatus.CANCELLED -> XPayPaymentStatus.CANCELLED
-    XPayEmbeddedPaymentStatus.DUPLICATE -> XPayPaymentStatus.DUPLICATE
-    XPayEmbeddedPaymentStatus.FAILED -> XPayPaymentStatus.FAILED
-    XPayEmbeddedPaymentStatus.EXPIRED -> XPayPaymentStatus.EXPIRED
-    XPayEmbeddedPaymentStatus.UNSUPPORTED -> XPayPaymentStatus.UNSUPPORTED
+    XPayEmbeddedPaymentStatus.UNAVAILABLE -> XPayPaymentStatus.UNAVAILABLE
 }
 
-private fun XPayEmbeddedFailureCategory.toCategory(): XPayFailureCategory = when (this) {
-    XPayEmbeddedFailureCategory.SYSTEM -> XPayFailureCategory.SYSTEM
-    XPayEmbeddedFailureCategory.NETWORK -> XPayFailureCategory.NETWORK
-    XPayEmbeddedFailureCategory.CARDHOLDER_RETRY -> XPayFailureCategory.CARDHOLDER_RETRY
-    XPayEmbeddedFailureCategory.CARDHOLDER_CHANGE -> XPayFailureCategory.CARDHOLDER_CHANGE
-    XPayEmbeddedFailureCategory.CORPORATE_POLICY -> XPayFailureCategory.CORPORATE_POLICY
-    XPayEmbeddedFailureCategory.SESSION -> XPayFailureCategory.SESSION
-    XPayEmbeddedFailureCategory.UNKNOWN -> XPayFailureCategory.UNKNOWN
+private fun XPayEmbeddedFailureMessage.toFailure(): XPayPaymentFailure = XPayPaymentFailure(reason = reason.toReason(), authId = authId, errorCode = errorCode, note = note)
+
+private fun XPayEmbeddedFailureReason.toReason(): XPayFailureReason = when (this) {
+    XPayEmbeddedFailureReason.PAYMENT_DECLINED -> XPayFailureReason.PAYMENT_DECLINED
+    XPayEmbeddedFailureReason.SDK_ERROR -> XPayFailureReason.SDK_ERROR
+    XPayEmbeddedFailureReason.OTHER -> XPayFailureReason.OTHER
+}
+
+private fun XPayEmbeddedPaidBy.toPaidBy(): XPayPaidBy = when (this) {
+    XPayEmbeddedPaidBy.PARTNER -> XPayPaidBy.PARTNER
+    XPayEmbeddedPaidBy.CS -> XPayPaidBy.CS
+}
+
+private fun XPayEmbeddedRideStatus.toRideStatus(): XPayRideStatus = when (this) {
+    XPayEmbeddedRideStatus.COMPLETED -> XPayRideStatus.COMPLETED
+    XPayEmbeddedRideStatus.CANCELLED -> XPayRideStatus.CANCELLED
 }
 
 private fun XPayEmbeddedLogCategory.toCategory(): XPayLogCategory = when (this) {

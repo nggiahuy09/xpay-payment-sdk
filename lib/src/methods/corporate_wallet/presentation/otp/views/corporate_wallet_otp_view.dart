@@ -20,12 +20,20 @@ import '../widgets/corporate_wallet_otp_status_row_widget.dart';
 import '../widgets/corporate_wallet_otp_submit_action_widget.dart';
 
 final class CorporateWalletOtpView extends StatefulWidget {
-  const CorporateWalletOtpView({super.key, required this.order, required this.onSubmittingChanged, required this.onVerified, required this.onFailed});
+  const CorporateWalletOtpView({
+    super.key,
+    required this.order,
+    required this.onSubmittingChanged,
+    required this.onVerified,
+    required this.onInterrupted,
+    required this.onFailed,
+  });
 
   final PaymentOrderEntity order;
   final void Function(bool isSubmitting) onSubmittingChanged;
   final void Function(CorporateWalletPaymentEntity payment) onVerified;
-  final void Function(String? errorCode, String? displayMessage) onFailed;
+  final void Function(String? errorCode) onInterrupted;
+  final void Function(String? errorCode, bool isConflict) onFailed;
 
   @override
   State<CorporateWalletOtpView> createState() => _CorporateWalletOtpViewState();
@@ -40,11 +48,24 @@ final class _CorporateWalletOtpViewState extends State<CorporateWalletOtpView> {
     super.dispose();
   }
 
-  void _handleFailure({required XPLocaleBase locale, required CorporateWalletFailureReason reason, String? errorCode, String? errorMessage, required String fallbackTitle}) {
-    final body = reason.getBody(locale) ?? errorMessage ?? locale.payment.xpay.resultGenericError(errorCode);
-    if (reason.isTerminal) return widget.onFailed.call(errorCode, body);
+  void _handleFailure({
+    required XPLocaleBase locale,
+    required CorporateWalletFailureReason reason,
+    String? errorCode,
+    String? errorMessage,
+    required String fallbackTitle,
+    bool isConflict = false,
+    bool isVerify = false,
+  }) {
+    if (isVerify && reason.needsHotline) return widget.onInterrupted.call(errorCode);
 
-    XPSnackBarManager.show(level: XPSnackBarMessageLevel.error, title: reason.getTitle(locale) ?? fallbackTitle, body: body);
+    if (reason.isTerminal) return widget.onFailed.call(errorCode, isConflict);
+
+    XPSnackBarManager.show(
+      level: XPSnackBarMessageLevel.error,
+      title: reason.getTitle(locale) ?? fallbackTitle,
+      body: reason.getBody(locale) ?? errorMessage ?? locale.payment.xpay.resultGenericError(errorCode),
+    );
   }
 
   void _onStateChanged(BuildContext context, CorporateWalletOtpState state) {
@@ -56,7 +77,15 @@ final class _CorporateWalletOtpViewState extends State<CorporateWalletOtpView> {
         widget.onVerified.call(state.payment);
         break;
       case CorporateWalletOtpVerifyErrorState _:
-        _handleFailure(locale: locale, reason: state.reason, errorCode: state.errorCode, errorMessage: state.errorMessage, fallbackTitle: viewLocale.verifyFailedTitle);
+        _handleFailure(
+          locale: locale,
+          reason: state.reason,
+          errorCode: state.errorCode,
+          errorMessage: state.errorMessage,
+          fallbackTitle: viewLocale.verifyFailedTitle,
+          isConflict: state.isConflict,
+          isVerify: true,
+        );
         break;
       case CorporateWalletOtpResendErrorState _:
         _handleFailure(locale: locale, reason: state.reason, errorCode: state.errorCode, errorMessage: state.errorMessage, fallbackTitle: viewLocale.resendFailedTitle);

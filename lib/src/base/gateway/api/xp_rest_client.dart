@@ -8,7 +8,9 @@ import 'api_type.dart';
 import 'xp_http_method.dart';
 import 'xp_rate_limit_interceptor.dart';
 import 'xp_resource.dart';
+import 'xp_session_renew_interceptor.dart';
 import 'xp_token_provider.dart';
+import 'xp_transient_retry_interceptor.dart';
 
 /// Shared Dio wrapper. All remote calls go through [request]; every Dio failure is mapped into the `XPException` hierarchy before it leaves this layer.
 base class XPRestClient {
@@ -21,23 +23,29 @@ base class XPRestClient {
   }) : this._(Dio(BaseOptions(baseUrl: baseUrl, connectTimeout: connectTimeout, receiveTimeout: receiveTimeout)), tokenProvider, extraInterceptors);
 
   XPRestClient._(this._dio, this._tokenProvider, List<Interceptor> extraInterceptors) {
-    _dio.interceptors.addAll([XPRateLimitInterceptor(_dio), ...extraInterceptors]);
+    _dio.interceptors.addAll([XPRateLimitInterceptor(_dio), XPSessionRenewInterceptor(_dio, _tokenProvider), XPTransientRetryInterceptor(_dio), ...extraInterceptors]);
   }
 
   final Dio _dio;
   final XPTokenProvider _tokenProvider;
 
-  static const String _kSessionExpired = 'session_expired';
-
   Future<T> request<T>(XPResource<T> resource, {required APIType type, Object Function(Map<String, dynamic> details)? onErrorDetails}) async {
     XPLogger.info('Execute API: path=${resource.path}, method=${resource.method.toDioMethod()}, ${resource.description}', name: 'XPRestClient');
+    final timeout = resource.timeout;
+    final cancelToken = timeout == null ? null : CancelToken();
     try {
-      final response = await _dio.request<Object?>(
+      final request = _dio.request<Object?>(
         resource.path,
         data: resource.body,
         queryParameters: resource.queryParameters,
-        options: Options(extra: {XPHttpHeaderKeys.kApiTypeExtra: type}, headers: await _createHeaders(type, resource.headers), method: resource.method.toDioMethod()),
+        cancelToken: cancelToken,
+        options: Options(
+          extra: {XPHttpHeaderKeys.kApiTypeExtra: type, if (resource.retriesTransientFailures == false) XPHttpHeaderKeys.kSkipTransientRetryExtra: true},
+          headers: await _createHeaders(type, resource.headers),
+          method: resource.method.toDioMethod(),
+        ),
       );
+      final response = await (timeout == null ? request : request.timeout(timeout, onTimeout: () => _onTimeout(cancelToken)));
       return resource.parse(response.data);
     } on DioException catch (e) {
       throw _mapDioException(e, onErrorDetails: onErrorDetails);
@@ -46,6 +54,11 @@ base class XPRestClient {
     } catch (e) {
       throw XPUnknownException(error: e);
     }
+  }
+
+  Never _onTimeout(CancelToken? cancelToken) {
+    cancelToken?.cancel();
+    throw const XPNetworkException.timeout();
   }
 
   Future<Map<String, dynamic>> _createHeaders(APIType type, Map<String, dynamic>? extra) async {
@@ -78,8 +91,6 @@ base class XPRestClient {
       case DioExceptionType.badResponse:
         final response = e.response;
         final statusCode = response?.statusCode;
-        if (statusCode == 401 && response?.errorCode == _kSessionExpired) return XPUnauthorizedException.tokenExpired(error: e);
-
         final errorDetails = response?.errorDetails;
         final details = errorDetails != null ? onErrorDetails?.call(errorDetails) : null;
 

@@ -4,6 +4,35 @@ All notable changes to the XPay Payment SDK are listed here. From 3.1118.2 the v
 
 Entries marked **Breaking** need a change in your app.
 
+## 3.1128.1
+
+Moves the handling of an unsuccessful payment into the SDK, following the new XPay failure flow, and replaces the result type. **Breaking**: every app must change how it reads the result. See [docs/failure_handling.vi.md](docs/failure_handling.vi.md) (Vietnamese) for the flows, the screens and what your app and backend do with each result.
+
+### Added
+
+1. The SDK checks the ride with `GET /merchant/ride-payment` every time it opens. A ride that is already paid opens on a "payment successful" screen and returns `paid`; a ride that is closed or cancelled opens on a "ride closed" screen and returns `rideClosed`. Nothing is charged again.
+2. The SDK handles an unsuccessful payment on its own screens:
+   1. It retries on its own after a timeout, a lost connection, an HTTP 5xx, `429` or `request_in_flight` (up to 3 times, only for requests that cannot charge twice), and renews an expired session through `fetchSession`.
+   2. A failure popup shows the reason, the ride reference and the XPay support number, which the driver taps to call (copied when the phone cannot call). "Retry" returns to the method list; after 3 failures in a row the driver is asked to call XPay support.
+   3. After the driver confirms the call, a next-step screen offers "retry with XPay", "pay another way" and "XPay support pays"; the last one opens a "waiting for XPay support" screen that checks the ride for up to 5 minutes.
+3. `fetchSession`, the second argument of `XPayPaymentRequest.fromSession` (`Future<String> Function()?`), and a field of `XPayCheckout` on Android (`(suspend () -> String)?`) and iOS (`(@MainActor () async throws -> String)?`). The SDK calls it when XPay answers `ride_payment_session_expired`, and sends the rejected request again on the new session. A new session with another fare ends with `retryInPartner`.
+4. `XPayPaymentResult.isRetryable` (`bool`, `Boolean` on Android, `Bool` on iOS): `true` for `retryInPartner` and `cancelled`, when your app may open XPay again right away.
+5. `XPayPayment.supportHotline` (`XPayPayment.SUPPORT_HOTLINE` on Android): the XPay support number, `19002189`.
+6. New dependency `url_launcher` `^6.3.1`, used to call XPay support. The Android AAR has one more POM (`url_launcher_android`), the iOS package one more framework (`url_launcher_ios`). The SDK's Android manifest declares a `<queries>` entry for `tel:`.
+
+### Breaking
+
+1. `XPayPaymentStatus` is now `paid`, `retryInPartner`, `otherMethod`, `csPending`, `rideClosed`, `cancelled` and `unavailable` (`PAID`, `RETRY_IN_PARTNER`, … on Android). The old values are removed:
+   1. `approved`, `captured` → `paid`, with `paidBy` `partner`, or `cs` when XPay support paid.
+   2. `declined`, `failed`, `duplicate`, `expired` → handled on the SDK screens. The payment then ends with `retryInPartner`, `otherMethod`, `csPending`, `paid` or `rideClosed`.
+   3. `unsupported`, and `failed` with `sdk_not_initialized`, `sdk_busy` or `sdk_invalid_request` → `unavailable` with that `errorCode`. `unsupported` becomes `errorCode` `sdk_unsupported`.
+2. `XPayPaymentResult` loses `failureCategory`, `message`, `declineCode` and `bookingRef`, and gains `failure` (`XPayPaymentFailure`: `reason`, `authId`, `errorCode`, `note`), `pendingAuthId`, `paidBy` (`XPayPaidBy`) and `rideStatus` (`XPayRideStatus`). `errorCode` is set only on `unavailable`; the raw code of a failed payment is in `failure.errorCode`.
+3. `XPayFailureCategory` is removed, and `docs/failure_categories.vi.md` is replaced by `docs/failure_handling.vi.md`.
+4. Your app no longer shows its own "payment failed" or "call XPay support" popups: the SDK shows them. Your backend reports `POST /merchant/rides/{order_id}/payment-failure`, with `reason`, `auth_id` and `note` taken from `failure`, whenever the driver stays on your payment screen without paying through XPay. For cash it reports `paid_cash` before the driver takes the cash.
+5. A card payment left waiting for its OTP/PIN is returned in `pendingAuthId`, not in `authId`. Void it from your backend before collecting another way.
+6. A session that expires mid-payment no longer ends with `failed` and `token_expired`, nor with `expired` on a wallet QR: the SDK calls `fetchSession`, or shows the failure popup and returns `retryInPartner`.
+7. `XPayConfig.language` now applies to the SDK screens only, since the result no longer has a `message`.
+
 ## 3.1126.1
 
 Adds a failure category to every unsuccessful result. No public type, field or method is renamed or removed.

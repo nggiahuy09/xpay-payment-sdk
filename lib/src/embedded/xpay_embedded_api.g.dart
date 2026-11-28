@@ -107,14 +107,10 @@ int _deepHash(Object? value) {
 }
 
 
-enum XPayEmbeddedFailureCategory {
-  system,
-  network,
-  cardholderRetry,
-  cardholderChange,
-  corporatePolicy,
-  session,
-  unknown;
+enum XPayEmbeddedFailureReason {
+  paymentDeclined,
+  sdkError,
+  other;
 }
 
 enum XPayEmbeddedLanguage {
@@ -134,15 +130,24 @@ enum XPayEmbeddedLogLevel {
   error;
 }
 
+enum XPayEmbeddedPaidBy {
+  partner,
+  cs;
+}
+
 enum XPayEmbeddedPaymentStatus {
-  approved,
-  captured,
-  declined,
+  paid,
+  retryInPartner,
+  otherMethod,
+  csPending,
+  rideClosed,
   cancelled,
-  duplicate,
-  failed,
-  expired,
-  unsupported;
+  unavailable;
+}
+
+enum XPayEmbeddedRideStatus {
+  completed,
+  cancelled;
 }
 
 class XPayEmbeddedConfigMessage {
@@ -198,13 +203,17 @@ class XPayEmbeddedConfigMessage {
 class XPayEmbeddedRequestMessage {
   XPayEmbeddedRequestMessage({
     required this.sessionJson,
+    required this.canFetchSession,
   });
 
   String sessionJson;
 
+  bool canFetchSession;
+
   List<Object?> _toList() {
     return <Object?>[
       sessionJson,
+      canFetchSession,
     ];
   }
 
@@ -215,6 +224,7 @@ class XPayEmbeddedRequestMessage {
     result as List<Object?>;
     return XPayEmbeddedRequestMessage(
       sessionJson: result[0]! as String,
+      canFetchSession: result[1]! as bool,
     );
   }
 
@@ -227,7 +237,7 @@ class XPayEmbeddedRequestMessage {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(sessionJson, other.sessionJson);
+    return _deepEquals(sessionJson, other.sessionJson) && _deepEquals(canFetchSession, other.canFetchSession);
   }
 
   @override
@@ -236,45 +246,105 @@ class XPayEmbeddedRequestMessage {
 
   @override
   String toString() {
-    return 'XPayEmbeddedRequestMessage(sessionJson: $sessionJson)';
+    return 'XPayEmbeddedRequestMessage(sessionJson: $sessionJson, canFetchSession: $canFetchSession)';
+  }
+}
+
+class XPayEmbeddedFailureMessage {
+  XPayEmbeddedFailureMessage({
+    required this.reason,
+    this.authId,
+    this.errorCode,
+    this.note,
+  });
+
+  XPayEmbeddedFailureReason reason;
+
+  String? authId;
+
+  String? errorCode;
+
+  String? note;
+
+  List<Object?> _toList() {
+    return <Object?>[
+      reason,
+      authId,
+      errorCode,
+      note,
+    ];
+  }
+
+  Object encode() {
+    return _toList();  }
+
+  static XPayEmbeddedFailureMessage decode(Object result) {
+    result as List<Object?>;
+    return XPayEmbeddedFailureMessage(
+      reason: result[0]! as XPayEmbeddedFailureReason,
+      authId: result[1] as String?,
+      errorCode: result[2] as String?,
+      note: result[3] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! XPayEmbeddedFailureMessage || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(reason, other.reason) && _deepEquals(authId, other.authId) && _deepEquals(errorCode, other.errorCode) && _deepEquals(note, other.note);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'XPayEmbeddedFailureMessage(reason: $reason, authId: $authId, errorCode: $errorCode, note: $note)';
   }
 }
 
 class XPayEmbeddedResultMessage {
   XPayEmbeddedResultMessage({
-    this.failureCategory,
+    this.failure,
+    this.paidBy,
+    this.rideStatus,
     required this.status,
     this.authId,
-    this.bookingRef,
     this.captureId,
     this.currency,
-    this.declineCode,
     this.errorCode,
     this.externalRef,
-    this.message,
+    this.pendingAuthId,
     this.amount,
     this.createdAtEpochMillis,
   });
 
-  XPayEmbeddedFailureCategory? failureCategory;
+  XPayEmbeddedFailureMessage? failure;
+
+  XPayEmbeddedPaidBy? paidBy;
+
+  XPayEmbeddedRideStatus? rideStatus;
 
   XPayEmbeddedPaymentStatus status;
 
   String? authId;
 
-  String? bookingRef;
-
   String? captureId;
 
   String? currency;
-
-  String? declineCode;
 
   String? errorCode;
 
   String? externalRef;
 
-  String? message;
+  String? pendingAuthId;
 
   int? amount;
 
@@ -282,16 +352,16 @@ class XPayEmbeddedResultMessage {
 
   List<Object?> _toList() {
     return <Object?>[
-      failureCategory,
+      failure,
+      paidBy,
+      rideStatus,
       status,
       authId,
-      bookingRef,
       captureId,
       currency,
-      declineCode,
       errorCode,
       externalRef,
-      message,
+      pendingAuthId,
       amount,
       createdAtEpochMillis,
     ];
@@ -303,16 +373,16 @@ class XPayEmbeddedResultMessage {
   static XPayEmbeddedResultMessage decode(Object result) {
     result as List<Object?>;
     return XPayEmbeddedResultMessage(
-      failureCategory: result[0] as XPayEmbeddedFailureCategory?,
-      status: result[1]! as XPayEmbeddedPaymentStatus,
-      authId: result[2] as String?,
-      bookingRef: result[3] as String?,
-      captureId: result[4] as String?,
-      currency: result[5] as String?,
-      declineCode: result[6] as String?,
+      failure: result[0] as XPayEmbeddedFailureMessage?,
+      paidBy: result[1] as XPayEmbeddedPaidBy?,
+      rideStatus: result[2] as XPayEmbeddedRideStatus?,
+      status: result[3]! as XPayEmbeddedPaymentStatus,
+      authId: result[4] as String?,
+      captureId: result[5] as String?,
+      currency: result[6] as String?,
       errorCode: result[7] as String?,
       externalRef: result[8] as String?,
-      message: result[9] as String?,
+      pendingAuthId: result[9] as String?,
       amount: result[10] as int?,
       createdAtEpochMillis: result[11] as int?,
     );
@@ -327,7 +397,7 @@ class XPayEmbeddedResultMessage {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(failureCategory, other.failureCategory) && _deepEquals(status, other.status) && _deepEquals(authId, other.authId) && _deepEquals(bookingRef, other.bookingRef) && _deepEquals(captureId, other.captureId) && _deepEquals(currency, other.currency) && _deepEquals(declineCode, other.declineCode) && _deepEquals(errorCode, other.errorCode) && _deepEquals(externalRef, other.externalRef) && _deepEquals(message, other.message) && _deepEquals(amount, other.amount) && _deepEquals(createdAtEpochMillis, other.createdAtEpochMillis);
+    return _deepEquals(failure, other.failure) && _deepEquals(paidBy, other.paidBy) && _deepEquals(rideStatus, other.rideStatus) && _deepEquals(status, other.status) && _deepEquals(authId, other.authId) && _deepEquals(captureId, other.captureId) && _deepEquals(currency, other.currency) && _deepEquals(errorCode, other.errorCode) && _deepEquals(externalRef, other.externalRef) && _deepEquals(pendingAuthId, other.pendingAuthId) && _deepEquals(amount, other.amount) && _deepEquals(createdAtEpochMillis, other.createdAtEpochMillis);
   }
 
   @override
@@ -336,7 +406,7 @@ class XPayEmbeddedResultMessage {
 
   @override
   String toString() {
-    return 'XPayEmbeddedResultMessage(failureCategory: $failureCategory, status: $status, authId: $authId, bookingRef: $bookingRef, captureId: $captureId, currency: $currency, declineCode: $declineCode, errorCode: $errorCode, externalRef: $externalRef, message: $message, amount: $amount, createdAtEpochMillis: $createdAtEpochMillis)';
+    return 'XPayEmbeddedResultMessage(failure: $failure, paidBy: $paidBy, rideStatus: $rideStatus, status: $status, authId: $authId, captureId: $captureId, currency: $currency, errorCode: $errorCode, externalRef: $externalRef, pendingAuthId: $pendingAuthId, amount: $amount, createdAtEpochMillis: $createdAtEpochMillis)';
   }
 }
 
@@ -428,7 +498,7 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is XPayEmbeddedFailureCategory) {
+    }    else if (value is XPayEmbeddedFailureReason) {
       buffer.putUint8(129);
       writeValue(buffer, value.index);
     }    else if (value is XPayEmbeddedLanguage) {
@@ -440,20 +510,29 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is XPayEmbeddedLogLevel) {
       buffer.putUint8(132);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedPaymentStatus) {
+    }    else if (value is XPayEmbeddedPaidBy) {
       buffer.putUint8(133);
       writeValue(buffer, value.index);
-    }    else if (value is XPayEmbeddedConfigMessage) {
+    }    else if (value is XPayEmbeddedPaymentStatus) {
       buffer.putUint8(134);
-      writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedRequestMessage) {
+      writeValue(buffer, value.index);
+    }    else if (value is XPayEmbeddedRideStatus) {
       buffer.putUint8(135);
-      writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedResultMessage) {
+      writeValue(buffer, value.index);
+    }    else if (value is XPayEmbeddedConfigMessage) {
       buffer.putUint8(136);
       writeValue(buffer, value.encode());
-    }    else if (value is XPayEmbeddedLogMessage) {
+    }    else if (value is XPayEmbeddedRequestMessage) {
       buffer.putUint8(137);
+      writeValue(buffer, value.encode());
+    }    else if (value is XPayEmbeddedFailureMessage) {
+      buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    }    else if (value is XPayEmbeddedResultMessage) {
+      buffer.putUint8(139);
+      writeValue(buffer, value.encode());
+    }    else if (value is XPayEmbeddedLogMessage) {
+      buffer.putUint8(140);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -465,7 +544,7 @@ class _PigeonCodec extends StandardMessageCodec {
     switch (type) {
       case 129:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedFailureCategory.values[value];
+        return value == null ? null : XPayEmbeddedFailureReason.values[value];
       case 130:
         final value = readValue(buffer) as int?;
         return value == null ? null : XPayEmbeddedLanguage.values[value];
@@ -477,14 +556,22 @@ class _PigeonCodec extends StandardMessageCodec {
         return value == null ? null : XPayEmbeddedLogLevel.values[value];
       case 133:
         final value = readValue(buffer) as int?;
-        return value == null ? null : XPayEmbeddedPaymentStatus.values[value];
+        return value == null ? null : XPayEmbeddedPaidBy.values[value];
       case 134:
-        return XPayEmbeddedConfigMessage.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : XPayEmbeddedPaymentStatus.values[value];
       case 135:
-        return XPayEmbeddedRequestMessage.decode(readValue(buffer)!);
+        final value = readValue(buffer) as int?;
+        return value == null ? null : XPayEmbeddedRideStatus.values[value];
       case 136:
-        return XPayEmbeddedResultMessage.decode(readValue(buffer)!);
+        return XPayEmbeddedConfigMessage.decode(readValue(buffer)!);
       case 137:
+        return XPayEmbeddedRequestMessage.decode(readValue(buffer)!);
+      case 138:
+        return XPayEmbeddedFailureMessage.decode(readValue(buffer)!);
+      case 139:
+        return XPayEmbeddedResultMessage.decode(readValue(buffer)!);
+      case 140:
         return XPayEmbeddedLogMessage.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -603,5 +690,23 @@ class XPayEmbeddedHostApi {
         isNullValid: true,
     )
     ;
+  }
+
+  Future<String> fetchSession() async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.xpay_payment_sdk.XPayEmbeddedHostApi.fetchSession$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: false,
+    )
+    ;
+    return pigeonVar_replyValue! as String;
   }
 }

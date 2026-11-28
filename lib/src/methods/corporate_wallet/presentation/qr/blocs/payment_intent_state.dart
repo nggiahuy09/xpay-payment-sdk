@@ -89,12 +89,10 @@ final class PaymentIntentCancelErrorState extends PaymentIntentState {
 }
 
 final class PaymentIntentFailedState extends PaymentIntentState {
-  const PaymentIntentFailedState({this.errorCode, this.errorMessage, required this.isSessionExpired});
+  const PaymentIntentFailedState([this.errorCode]);
 
   final String? errorCode;
-  final String? errorMessage;
-  final bool isSessionExpired;
 
   @override
-  List<Object?> get props => [errorCode, errorMessage, isSessionExpired];
+  List<Object?> get props => [errorCode];
 }

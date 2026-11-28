@@ -36,6 +36,8 @@ abstract class $XPLocaleBasePaymentWallet {
   String get otpExpiredBody;
   String get otpLockedTitle;
   String get otpLockedBody;
+  String get otpNotPendingTitle;
+  String get otpNotPendingBody;
   String get otpVelocityExceededTitle;
   String get otpVelocityExceededBody;
   String get otpDeliveryFailedTitle;

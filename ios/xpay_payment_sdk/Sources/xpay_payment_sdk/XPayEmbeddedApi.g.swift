@@ -188,14 +188,10 @@ private func nilOrValue<T>(_ value: Any?) -> T? {
 }
 
 
-enum XPayEmbeddedFailureCategory: Int, CaseIterable {
-  case system = 0
-  case network = 1
-  case cardholderRetry = 2
-  case cardholderChange = 3
-  case corporatePolicy = 4
-  case session = 5
-  case unknown = 6
+enum XPayEmbeddedFailureReason: Int, CaseIterable {
+  case paymentDeclined = 0
+  case sdkError = 1
+  case other = 2
 }
 
 enum XPayEmbeddedLanguage: Int, CaseIterable {
@@ -215,15 +211,24 @@ enum XPayEmbeddedLogLevel: Int, CaseIterable {
   case error = 2
 }
 
+enum XPayEmbeddedPaidBy: Int, CaseIterable {
+  case partner = 0
+  case cs = 1
+}
+
 enum XPayEmbeddedPaymentStatus: Int, CaseIterable {
-  case approved = 0
-  case captured = 1
-  case declined = 2
-  case cancelled = 3
-  case duplicate = 4
-  case failed = 5
-  case expired = 6
-  case unsupported = 7
+  case paid = 0
+  case retryInPartner = 1
+  case otherMethod = 2
+  case csPending = 3
+  case rideClosed = 4
+  case cancelled = 5
+  case unavailable = 6
+}
+
+enum XPayEmbeddedRideStatus: Int, CaseIterable {
+  case completed = 0
+  case cancelled = 1
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
@@ -269,96 +274,151 @@ struct XPayEmbeddedConfigMessage: Hashable, CustomStringConvertible {
 /// Generated class from Pigeon that represents data sent in messages.
 struct XPayEmbeddedRequestMessage: Hashable, CustomStringConvertible {
   var sessionJson: String
+  var canFetchSession: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> XPayEmbeddedRequestMessage? {
     let sessionJson = pigeonVar_list[0] as! String
+    let canFetchSession = pigeonVar_list[1] as! Bool
 
     return XPayEmbeddedRequestMessage(
-      sessionJson: sessionJson
+      sessionJson: sessionJson,
+      canFetchSession: canFetchSession
     )
   }
   func toList() -> [Any?] {
     return [
-      sessionJson
+      sessionJson,
+      canFetchSession,
     ]
   }
   static func == (lhs: XPayEmbeddedRequestMessage, rhs: XPayEmbeddedRequestMessage) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return XPayEmbeddedApiPigeonInternal.deepEquals(lhs.sessionJson, rhs.sessionJson)
+    return XPayEmbeddedApiPigeonInternal.deepEquals(lhs.sessionJson, rhs.sessionJson) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.canFetchSession, rhs.canFetchSession)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("XPayEmbeddedRequestMessage")
     XPayEmbeddedApiPigeonInternal.deepHash(value: sessionJson, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: canFetchSession, hasher: &hasher)
   }
 
   public var description: String {
-    return "XPayEmbeddedRequestMessage(sessionJson: \(String(describing: sessionJson)))"
+    return "XPayEmbeddedRequestMessage(sessionJson: \(String(describing: sessionJson)), canFetchSession: \(String(describing: canFetchSession)))"
+  }
+}
+
+/// Generated class from Pigeon that represents data sent in messages.
+struct XPayEmbeddedFailureMessage: Hashable, CustomStringConvertible {
+  var reason: XPayEmbeddedFailureReason
+  var authId: String? = nil
+  var errorCode: String? = nil
+  var note: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> XPayEmbeddedFailureMessage? {
+    let reason = pigeonVar_list[0] as! XPayEmbeddedFailureReason
+    let authId: String? = nilOrValue(pigeonVar_list[1])
+    let errorCode: String? = nilOrValue(pigeonVar_list[2])
+    let note: String? = nilOrValue(pigeonVar_list[3])
+
+    return XPayEmbeddedFailureMessage(
+      reason: reason,
+      authId: authId,
+      errorCode: errorCode,
+      note: note
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      reason,
+      authId,
+      errorCode,
+      note,
+    ]
+  }
+  static func == (lhs: XPayEmbeddedFailureMessage, rhs: XPayEmbeddedFailureMessage) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return XPayEmbeddedApiPigeonInternal.deepEquals(lhs.reason, rhs.reason) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.authId, rhs.authId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.errorCode, rhs.errorCode) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.note, rhs.note)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("XPayEmbeddedFailureMessage")
+    XPayEmbeddedApiPigeonInternal.deepHash(value: reason, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: authId, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: errorCode, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: note, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "XPayEmbeddedFailureMessage(reason: \(String(describing: reason)), authId: \(String(describing: authId)), errorCode: \(String(describing: errorCode)), note: \(String(describing: note)))"
   }
 }
 
 /// Generated class from Pigeon that represents data sent in messages.
 struct XPayEmbeddedResultMessage: Hashable, CustomStringConvertible {
-  var failureCategory: XPayEmbeddedFailureCategory? = nil
+  var failure: XPayEmbeddedFailureMessage? = nil
+  var paidBy: XPayEmbeddedPaidBy? = nil
+  var rideStatus: XPayEmbeddedRideStatus? = nil
   var status: XPayEmbeddedPaymentStatus
   var authId: String? = nil
-  var bookingRef: String? = nil
   var captureId: String? = nil
   var currency: String? = nil
-  var declineCode: String? = nil
   var errorCode: String? = nil
   var externalRef: String? = nil
-  var message: String? = nil
+  var pendingAuthId: String? = nil
   var amount: Int64? = nil
   var createdAtEpochMillis: Int64? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> XPayEmbeddedResultMessage? {
-    let failureCategory: XPayEmbeddedFailureCategory? = nilOrValue(pigeonVar_list[0])
-    let status = pigeonVar_list[1] as! XPayEmbeddedPaymentStatus
-    let authId: String? = nilOrValue(pigeonVar_list[2])
-    let bookingRef: String? = nilOrValue(pigeonVar_list[3])
-    let captureId: String? = nilOrValue(pigeonVar_list[4])
-    let currency: String? = nilOrValue(pigeonVar_list[5])
-    let declineCode: String? = nilOrValue(pigeonVar_list[6])
+    let failure: XPayEmbeddedFailureMessage? = nilOrValue(pigeonVar_list[0])
+    let paidBy: XPayEmbeddedPaidBy? = nilOrValue(pigeonVar_list[1])
+    let rideStatus: XPayEmbeddedRideStatus? = nilOrValue(pigeonVar_list[2])
+    let status = pigeonVar_list[3] as! XPayEmbeddedPaymentStatus
+    let authId: String? = nilOrValue(pigeonVar_list[4])
+    let captureId: String? = nilOrValue(pigeonVar_list[5])
+    let currency: String? = nilOrValue(pigeonVar_list[6])
     let errorCode: String? = nilOrValue(pigeonVar_list[7])
     let externalRef: String? = nilOrValue(pigeonVar_list[8])
-    let message: String? = nilOrValue(pigeonVar_list[9])
+    let pendingAuthId: String? = nilOrValue(pigeonVar_list[9])
     let amount: Int64? = nilOrValue(pigeonVar_list[10])
     let createdAtEpochMillis: Int64? = nilOrValue(pigeonVar_list[11])
 
     return XPayEmbeddedResultMessage(
-      failureCategory: failureCategory,
+      failure: failure,
+      paidBy: paidBy,
+      rideStatus: rideStatus,
       status: status,
       authId: authId,
-      bookingRef: bookingRef,
       captureId: captureId,
       currency: currency,
-      declineCode: declineCode,
       errorCode: errorCode,
       externalRef: externalRef,
-      message: message,
+      pendingAuthId: pendingAuthId,
       amount: amount,
       createdAtEpochMillis: createdAtEpochMillis
     )
   }
   func toList() -> [Any?] {
     return [
-      failureCategory,
+      failure,
+      paidBy,
+      rideStatus,
       status,
       authId,
-      bookingRef,
       captureId,
       currency,
-      declineCode,
       errorCode,
       externalRef,
-      message,
+      pendingAuthId,
       amount,
       createdAtEpochMillis,
     ]
@@ -367,27 +427,27 @@ struct XPayEmbeddedResultMessage: Hashable, CustomStringConvertible {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return XPayEmbeddedApiPigeonInternal.deepEquals(lhs.failureCategory, rhs.failureCategory) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.status, rhs.status) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.authId, rhs.authId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.bookingRef, rhs.bookingRef) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.captureId, rhs.captureId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.currency, rhs.currency) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.declineCode, rhs.declineCode) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.errorCode, rhs.errorCode) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.externalRef, rhs.externalRef) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.message, rhs.message) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.amount, rhs.amount) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.createdAtEpochMillis, rhs.createdAtEpochMillis)
+    return XPayEmbeddedApiPigeonInternal.deepEquals(lhs.failure, rhs.failure) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.paidBy, rhs.paidBy) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.rideStatus, rhs.rideStatus) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.status, rhs.status) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.authId, rhs.authId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.captureId, rhs.captureId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.currency, rhs.currency) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.errorCode, rhs.errorCode) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.externalRef, rhs.externalRef) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.pendingAuthId, rhs.pendingAuthId) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.amount, rhs.amount) && XPayEmbeddedApiPigeonInternal.deepEquals(lhs.createdAtEpochMillis, rhs.createdAtEpochMillis)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("XPayEmbeddedResultMessage")
-    XPayEmbeddedApiPigeonInternal.deepHash(value: failureCategory, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: failure, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: paidBy, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: rideStatus, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: status, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: authId, hasher: &hasher)
-    XPayEmbeddedApiPigeonInternal.deepHash(value: bookingRef, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: captureId, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: currency, hasher: &hasher)
-    XPayEmbeddedApiPigeonInternal.deepHash(value: declineCode, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: errorCode, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: externalRef, hasher: &hasher)
-    XPayEmbeddedApiPigeonInternal.deepHash(value: message, hasher: &hasher)
+    XPayEmbeddedApiPigeonInternal.deepHash(value: pendingAuthId, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: amount, hasher: &hasher)
     XPayEmbeddedApiPigeonInternal.deepHash(value: createdAtEpochMillis, hasher: &hasher)
   }
 
   public var description: String {
-    return "XPayEmbeddedResultMessage(failureCategory: \(String(describing: failureCategory)), status: \(String(describing: status)), authId: \(String(describing: authId)), bookingRef: \(String(describing: bookingRef)), captureId: \(String(describing: captureId)), currency: \(String(describing: currency)), declineCode: \(String(describing: declineCode)), errorCode: \(String(describing: errorCode)), externalRef: \(String(describing: externalRef)), message: \(String(describing: message)), amount: \(String(describing: amount)), createdAtEpochMillis: \(String(describing: createdAtEpochMillis)))"
+    return "XPayEmbeddedResultMessage(failure: \(String(describing: failure)), paidBy: \(String(describing: paidBy)), rideStatus: \(String(describing: rideStatus)), status: \(String(describing: status)), authId: \(String(describing: authId)), captureId: \(String(describing: captureId)), currency: \(String(describing: currency)), errorCode: \(String(describing: errorCode)), externalRef: \(String(describing: externalRef)), pendingAuthId: \(String(describing: pendingAuthId)), amount: \(String(describing: amount)), createdAtEpochMillis: \(String(describing: createdAtEpochMillis)))"
   }
 }
 
@@ -467,7 +527,7 @@ private class XPayEmbeddedApiPigeonCodecReader: FlutterStandardReader {
     case 129:
       let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
       if let enumResultAsInt = enumResultAsInt {
-        return XPayEmbeddedFailureCategory(rawValue: enumResultAsInt)
+        return XPayEmbeddedFailureReason(rawValue: enumResultAsInt)
       }
       return nil
     case 130:
@@ -491,16 +551,30 @@ private class XPayEmbeddedApiPigeonCodecReader: FlutterStandardReader {
     case 133:
       let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
       if let enumResultAsInt = enumResultAsInt {
-        return XPayEmbeddedPaymentStatus(rawValue: enumResultAsInt)
+        return XPayEmbeddedPaidBy(rawValue: enumResultAsInt)
       }
       return nil
     case 134:
-      return XPayEmbeddedConfigMessage.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return XPayEmbeddedPaymentStatus(rawValue: enumResultAsInt)
+      }
+      return nil
     case 135:
-      return XPayEmbeddedRequestMessage.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return XPayEmbeddedRideStatus(rawValue: enumResultAsInt)
+      }
+      return nil
     case 136:
-      return XPayEmbeddedResultMessage.fromList(self.readValue() as! [Any?])
+      return XPayEmbeddedConfigMessage.fromList(self.readValue() as! [Any?])
     case 137:
+      return XPayEmbeddedRequestMessage.fromList(self.readValue() as! [Any?])
+    case 138:
+      return XPayEmbeddedFailureMessage.fromList(self.readValue() as! [Any?])
+    case 139:
+      return XPayEmbeddedResultMessage.fromList(self.readValue() as! [Any?])
+    case 140:
       return XPayEmbeddedLogMessage.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -510,7 +584,7 @@ private class XPayEmbeddedApiPigeonCodecReader: FlutterStandardReader {
 
 private class XPayEmbeddedApiPigeonCodecWriter: FlutterStandardWriter {
   override func writeValue(_ value: Any) {
-    if let value = value as? XPayEmbeddedFailureCategory {
+    if let value = value as? XPayEmbeddedFailureReason {
       super.writeByte(129)
       super.writeValue(value.rawValue)
     } else if let value = value as? XPayEmbeddedLanguage {
@@ -522,20 +596,29 @@ private class XPayEmbeddedApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? XPayEmbeddedLogLevel {
       super.writeByte(132)
       super.writeValue(value.rawValue)
-    } else if let value = value as? XPayEmbeddedPaymentStatus {
+    } else if let value = value as? XPayEmbeddedPaidBy {
       super.writeByte(133)
       super.writeValue(value.rawValue)
-    } else if let value = value as? XPayEmbeddedConfigMessage {
+    } else if let value = value as? XPayEmbeddedPaymentStatus {
       super.writeByte(134)
-      super.writeValue(value.toList())
-    } else if let value = value as? XPayEmbeddedRequestMessage {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? XPayEmbeddedRideStatus {
       super.writeByte(135)
-      super.writeValue(value.toList())
-    } else if let value = value as? XPayEmbeddedResultMessage {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? XPayEmbeddedConfigMessage {
       super.writeByte(136)
       super.writeValue(value.toList())
-    } else if let value = value as? XPayEmbeddedLogMessage {
+    } else if let value = value as? XPayEmbeddedRequestMessage {
       super.writeByte(137)
+      super.writeValue(value.toList())
+    } else if let value = value as? XPayEmbeddedFailureMessage {
+      super.writeByte(138)
+      super.writeValue(value.toList())
+    } else if let value = value as? XPayEmbeddedResultMessage {
+      super.writeByte(139)
+      super.writeValue(value.toList())
+    } else if let value = value as? XPayEmbeddedLogMessage {
+      super.writeByte(140)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -556,6 +639,7 @@ private class XPayEmbeddedApiPigeonCodecReaderWriter: FlutterStandardReaderWrite
 class XPayEmbeddedApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable {
   static let shared = XPayEmbeddedApiPigeonCodec(readerWriter: XPayEmbeddedApiPigeonCodecReaderWriter())
 }
+
 
 
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
@@ -635,6 +719,7 @@ class XPayEmbeddedFlutterApi: XPayEmbeddedFlutterApiProtocol {
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol XPayEmbeddedHostApi {
   func onLog(event: XPayEmbeddedLogMessage) throws
+  func fetchSession(completion: @escaping (Result<String, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -657,6 +742,21 @@ class XPayEmbeddedHostApiSetup {
       }
     } else {
       onLogChannel.setMessageHandler(nil)
+    }
+    let fetchSessionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.xpay_payment_sdk.XPayEmbeddedHostApi.fetchSession\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      fetchSessionChannel.setMessageHandler { _, reply in
+        api.fetchSession { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      fetchSessionChannel.setMessageHandler(nil)
     }
   }
 }

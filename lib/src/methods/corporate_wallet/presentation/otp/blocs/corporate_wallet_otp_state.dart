@@ -92,14 +92,16 @@ final class CorporateWalletOtpVerifyErrorState extends CorporateWalletOtpState {
     required this.reason,
     this.errorCode,
     this.errorMessage,
+    required this.isConflict,
   });
 
   final CorporateWalletFailureReason reason;
   final String? errorCode;
   final String? errorMessage;
+  final bool isConflict;
 
   @override
-  List<Object?> get props => [...super.props, reason, errorCode, errorMessage];
+  List<Object?> get props => [...super.props, reason, errorCode, errorMessage, isConflict];
 }
 
 final class CorporateWalletOtpCodeExpiredState extends CorporateWalletOtpState {

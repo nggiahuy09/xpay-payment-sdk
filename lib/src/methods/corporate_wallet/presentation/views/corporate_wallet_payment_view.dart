@@ -20,9 +20,10 @@ import '../qr/views/corporate_wallet_qr_view.dart';
 import '../widgets/corporate_wallet_methods_widget.dart';
 
 final class CorporateWalletPaymentView extends StatefulWidget {
-  const CorporateWalletPaymentView({super.key, required this.session});
+  const CorporateWalletPaymentView({super.key, required this.session, required this.onOutcome});
 
   final PaymentSessionEntity session;
+  final void Function(PaymentFlowOutcomeEntity outcome) onOutcome;
 
   @override
   State<CorporateWalletPaymentView> createState() => _CorporateWalletPaymentViewState();
@@ -97,7 +98,8 @@ final class _CorporateWalletPaymentViewState extends State<CorporateWalletPaymen
             order: widget.session.order,
             onSubmittingChanged: _onOtpSubmittingChanged,
             onVerified: _completeVerified,
-            onFailed: _completeFailed,
+            onInterrupted: _reportInterrupted,
+            onFailed: _completeOtpFailed,
           ),
         ),
       );
@@ -114,15 +116,26 @@ final class _CorporateWalletPaymentViewState extends State<CorporateWalletPaymen
   void _completeVerified(CorporateWalletPaymentEntity payment) =>
       _complete(PaymentFlowWalletCapturedOutcomeEntity(currency: payment.currency, externalRef: payment.externalRef, amount: payment.amount));
 
-  void _completeFailed(String? errorCode, String? displayMessage) => _complete(PaymentFlowFailedOutcomeEntity(displayMessage: displayMessage, errorCode: errorCode));
+  void _completeFailed(String? errorCode) => _complete(PaymentFlowFailedOutcomeEntity(errorCode: errorCode));
+
+  void _completeOtpFailed(String? errorCode, bool isConflict) =>
+      _complete(isConflict ? PaymentFlowConflictOutcomeEntity(errorCode: errorCode) : PaymentFlowFailedOutcomeEntity(errorCode: errorCode));
+
+  void _reportInterrupted(String? errorCode) {
+    if (_isCompleted || mounted == false) return;
+
+    XPLoadingManager.hideDefaultOverlay();
+    widget.onOutcome.call(PaymentFlowWalletInterruptedOutcomeEntity(errorCode));
+  }
 
   void _complete(PaymentFlowOutcomeEntity outcome) {
     if (_isCompleted || mounted == false) return;
 
     _isCompleted = true;
+    _hostCancellation.detach(_cancelByHost);
     XPLoadingManager.hideDefaultOverlay();
     getIt.get<SnackBarCubit>().clear();
-    Navigator.of(context).pop(outcome);
+    widget.onOutcome.call(outcome);
   }
 
   void _cancelByHost() {
@@ -167,15 +180,16 @@ final class _CorporateWalletPaymentViewState extends State<CorporateWalletPaymen
       case CorporateWalletOtpRequestErrorState _:
         XPLoadingManager.hideDefaultOverlay();
         final reason = state.reason;
-        final body = reason.getBody(locale) ?? state.errorMessage ?? locale.payment.xpay.resultGenericError(state.errorCode);
-        if (reason.isTerminal) return _completeFailed(state.errorCode, body);
+        if (reason.isTerminal) return _completeFailed(state.errorCode);
 
-        XPSnackBarManager.show(level: XPSnackBarMessageLevel.error, title: reason.getTitle(locale) ?? locale.payment.wallet.otpDeliveryFailedTitle, body: body);
+        XPSnackBarManager.show(
+          level: XPSnackBarMessageLevel.error,
+          title: reason.getTitle(locale) ?? locale.payment.wallet.otpDeliveryFailedTitle,
+          body: reason.getBody(locale) ?? state.errorMessage ?? locale.payment.xpay.resultGenericError(state.errorCode),
+        );
         break;
       case CorporateWalletChannelsLoadErrorState _:
-        if (state.reason.isTerminal) {
-          _completeFailed(state.errorCode, state.reason.getBody(locale) ?? state.errorMessage ?? locale.payment.xpay.resultGenericError(state.errorCode));
-        }
+        if (state.reason.isTerminal) _completeFailed(state.errorCode);
         break;
       case CorporateWalletInitState _:
       case CorporateWalletChannelsLoadingState _:
@@ -205,9 +219,7 @@ final class _CorporateWalletPaymentViewState extends State<CorporateWalletPaymen
         );
         break;
       case PaymentIntentFailedState _:
-        _complete(
-          state.isSessionExpired ? const PaymentFlowExpiredOutcomeEntity() : PaymentFlowFailedOutcomeEntity(displayMessage: state.errorMessage, errorCode: state.errorCode),
-        );
+        _complete(PaymentFlowFailedOutcomeEntity(errorCode: state.errorCode));
         break;
       case PaymentIntentCapturedState _:
         final intent = state.intent;
@@ -233,12 +245,9 @@ final class _CorporateWalletPaymentViewState extends State<CorporateWalletPaymen
   }
 
   PaymentFlowOutcomeEntity _toEndedOutcome(PaymentIntentEntity intent) => switch (intent.status) {
-    PaymentIntentStatus.declined => PaymentFlowWalletDeclinedOutcomeEntity(currency: intent.currency, externalRef: intent.externalRef, amount: intent.amount),
-    PaymentIntentStatus.expired => const PaymentFlowExpiredOutcomeEntity(),
-    PaymentIntentStatus.requiresConfirmation ||
-    PaymentIntentStatus.captured ||
-    PaymentIntentStatus.canceled ||
-    PaymentIntentStatus.unknown => const PaymentFlowCancelledOutcomeEntity(),
+    PaymentIntentStatus.declined => const PaymentFlowWalletDeclinedOutcomeEntity(),
+    PaymentIntentStatus.expired || PaymentIntentStatus.canceled => const PaymentFlowQrExpiredOutcomeEntity(),
+    PaymentIntentStatus.requiresConfirmation || PaymentIntentStatus.captured || PaymentIntentStatus.unknown => const PaymentFlowCancelledOutcomeEntity(),
   };
 
   @override

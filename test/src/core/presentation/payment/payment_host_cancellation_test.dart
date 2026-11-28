@@ -33,4 +33,39 @@ void main() {
     expect(cancellation.request(), isTrue);
     expect(openCalls, 1);
   });
+
+  test('a request is remembered for the open payment until the next payment resets it', () {
+    final cancellation = PaymentHostCancellation();
+    void flow() {}
+
+    cancellation.request();
+    expect(cancellation.isRequested, isFalse);
+
+    cancellation.attach(flow);
+    cancellation.request();
+    expect(cancellation.isRequested, isTrue);
+
+    cancellation.detach(flow);
+    expect(cancellation.isRequested, isTrue);
+
+    cancellation.reset();
+    expect(cancellation.isRequested, isFalse);
+  });
+
+  test('a screen nested in the flow takes the request first, and the flow gets it back once the screen detaches', () {
+    final cancellation = PaymentHostCancellation();
+    var flowCalls = 0;
+    var screenCalls = 0;
+    void flow() => flowCalls++;
+    void screen() => screenCalls++;
+
+    cancellation.attach(flow);
+    cancellation.attach(screen);
+    cancellation.request();
+    expect((flowCalls, screenCalls), (0, 1));
+
+    cancellation.detach(screen);
+    cancellation.request();
+    expect((flowCalls, screenCalls), (1, 1));
+  });
 }
