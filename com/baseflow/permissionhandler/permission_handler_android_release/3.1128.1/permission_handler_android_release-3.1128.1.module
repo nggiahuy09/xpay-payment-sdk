@@ -1,0 +1,130 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.baseflow.permissionhandler",
+    "module": "permission_handler_android_release",
+    "version": "3.1128.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "permission_handler_android_release-3.1128.1.aar",
+          "url": "permission_handler_android_release-3.1128.1.aar",
+          "size": 26568,
+          "sha512": "cc33fa5503843d1d98dfb95cec9aec60d88eed5ab8d1467b3f284b349dce94312aceb8ab8f41acbab105d539954948e1ef59102446b8683973314c16a02c260e",
+          "sha256": "d2265d76aa8c360027b70bc8606d197206db7f94b1f7280910077e0ae58dbecd",
+          "sha1": "920f978c0379d6ac5721de2c3e184928eae59c79",
+          "md5": "ac7f7101fd027052994c1d6d0cc60b67"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "permission_handler_android_release-3.1128.1.aar",
+          "url": "permission_handler_android_release-3.1128.1.aar",
+          "size": 26568,
+          "sha512": "cc33fa5503843d1d98dfb95cec9aec60d88eed5ab8d1467b3f284b349dce94312aceb8ab8f41acbab105d539954948e1ef59102446b8683973314c16a02c260e",
+          "sha256": "d2265d76aa8c360027b70bc8606d197206db7f94b1f7280910077e0ae58dbecd",
+          "sha1": "920f978c0379d6ac5721de2c3e184928eae59c79",
+          "md5": "ac7f7101fd027052994c1d6d0cc60b67"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "permission_handler_android_release-3.1128.1-sources.jar",
+          "url": "permission_handler_android_release-3.1128.1-sources.jar",
+          "size": 18177,
+          "sha512": "673bc0d22579ac8c7f7a50b04d3f47d4cdb85dbc8aa15bfcb371b64223d3ee8f535385b2e67dfa1230c825ecddb11e45e1a0b74410e608691074c11623d4f06e",
+          "sha256": "3301b75b44b9f004580d559b28ab51dd9205289cc88ccc668ce8179f5bf24c67",
+          "sha1": "7a9e4cb073bdd84100ad45b7d2c21b036815543f",
+          "md5": "6347cb73f0ecc4fc5e825d6de82fca4e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "permission_handler_android_release-3.1128.1-javadoc.jar",
+          "url": "permission_handler_android_release-3.1128.1-javadoc.jar",
+          "size": 264583,
+          "sha512": "8d65e8f50bc1c18f2dfeff1745e55994cd2f25ed4f3db45a5fcbd0bb35f64c266ce780305ad6c7df32d2edea52c9c21774d15dc4e095733e70a398d522a5f4e6",
+          "sha256": "2d2f4be50b66aee36c2aa54b629b4d51f0ed08aa9ae778bad3013916e0995132",
+          "sha1": "6ae7ee5542d6a08fe55477c71f17e3f005519534",
+          "md5": "1ff5f41cb95d8e7c729c180848e23d7d"
+        }
+      ]
+    }
+  ]
+}

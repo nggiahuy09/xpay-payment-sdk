@@ -1,0 +1,165 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.xperise.xpay.payment",
+    "module": "xpay_payment_sdk_release",
+    "version": "3.1128.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.1.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity",
+          "version": {
+            "requires": "1.8.1"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "xpay_payment_sdk_release-3.1128.1.aar",
+          "url": "xpay_payment_sdk_release-3.1128.1.aar",
+          "size": 98823,
+          "sha512": "b320c09cb682d8f38e4a7a7fdfb96669db1a17345fbccc6163703f7c555b36c629714f01494c702d71bcf8c80d051f4133bd316278926a888842e66093255d40",
+          "sha256": "9c5cdd7a40c26a5a95af29dae684c480a4c1e26ac6496361ee14933f1ba1e6a2",
+          "sha1": "577fa1e071d835ac9d4c2e8a9c94fc2d476d36cc",
+          "md5": "21596d26323a0da7dcf2e43553cfb984"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "io.flutter",
+          "module": "flutter_embedding_release",
+          "version": {
+            "requires": "1.0.0-83675ed27633283e7fc296c8bca22e841224c096"
+          }
+        },
+        {
+          "group": "com.spencerccf.app_settings",
+          "module": "app_settings_release",
+          "version": {
+            "requires": "3.1128.1"
+          }
+        },
+        {
+          "group": "dev.steenbakker.mobile_scanner",
+          "module": "mobile_scanner_release",
+          "version": {
+            "requires": "3.1128.1"
+          }
+        },
+        {
+          "group": "dev.flutter.plugins.nfcmanager",
+          "module": "nfc_manager_release",
+          "version": {
+            "requires": "3.1128.1"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity",
+          "version": {
+            "requires": "1.8.1"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.2.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "xpay_payment_sdk_release-3.1128.1.aar",
+          "url": "xpay_payment_sdk_release-3.1128.1.aar",
+          "size": 98823,
+          "sha512": "b320c09cb682d8f38e4a7a7fdfb96669db1a17345fbccc6163703f7c555b36c629714f01494c702d71bcf8c80d051f4133bd316278926a888842e66093255d40",
+          "sha256": "9c5cdd7a40c26a5a95af29dae684c480a4c1e26ac6496361ee14933f1ba1e6a2",
+          "sha1": "577fa1e071d835ac9d4c2e8a9c94fc2d476d36cc",
+          "md5": "21596d26323a0da7dcf2e43553cfb984"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "xpay_payment_sdk_release-3.1128.1-sources.jar",
+          "url": "xpay_payment_sdk_release-3.1128.1-sources.jar",
+          "size": 13341,
+          "sha512": "e9538f195229a9c766d6ffbabfb6a27e875fab3c2469912d4f727f8bf3447cde0a540df5ec13d936c4df78b58a07b698beab9bc75c9b9e4013c4c62e03b87b99",
+          "sha256": "c282f914f9f76c8d597e364908b725f57623f7fb20c831ad7185a19a636966f4",
+          "sha1": "263032fc74db2743e3794f44cc7b15214fecb912",
+          "md5": "5eb74e996365192d5ac5f21f291472e2"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseJavaDocPublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "xpay_payment_sdk_release-3.1128.1-javadoc.jar",
+          "url": "xpay_payment_sdk_release-3.1128.1-javadoc.jar",
+          "size": 439304,
+          "sha512": "ddcdc2b6826f946a342d75adb8e8419a05cf5e8ef6126af7ef0d02067191c912b3e1f267ab717be81c891d303524f26b6226a829276198d8a357faafb1e6d56e",
+          "sha256": "366a3cde5ac0de27a15288114208940ad13927ac196752cbc73d81fb047931c9",
+          "sha1": "033fe130189762b4db3bf5bef5b3df3452d8ca82",
+          "md5": "168532275cbbd031fcfb86b3b6ed56ab"
+        }
+      ]
+    }
+  ]
+}

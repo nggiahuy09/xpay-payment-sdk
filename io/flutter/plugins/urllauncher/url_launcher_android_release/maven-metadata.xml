@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>io.flutter.plugins.urllauncher</groupId>
+  <artifactId>url_launcher_android_release</artifactId>
+  <versioning>
+    <latest>3.1128.1</latest>
+    <release>3.1128.1</release>
+    <versions>
+      <version>3.1128.1</version>
+    </versions>
+    <lastUpdated>20261128090335</lastUpdated>
+  </versioning>
+</metadata>
